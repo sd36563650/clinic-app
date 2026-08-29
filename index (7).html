@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>پرونده‌های مطب</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  :root{
+    --bg: #F7FAF9; --surface: #FFFFFF; --surface-2: #EEF4F2;
+    --ink: #26332E; --ink-soft: #5C6B65; --ink-faint: #93A39C; --line: #E2EAE7;
+    --accent: #2E6E62; --accent-soft: #E3EFEC; --accent-dark: #1F4E45; --accent-glow: rgba(46,110,98,0.18);
+    --danger: #B54A3C; --danger-soft: #FBEDEA; --warn: #C08A2E; --warn-soft: #FBF3E4;
+    --pink: #D4547E; --radius-sm: 8px; --radius-md: 14px; --radius-lg: 20px;
+    --ease: cubic-bezier(.22,1,.36,1);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{ font-family:'Vazirmatn', Tahoma, sans-serif; background: var(--bg); color: var(--ink); -webkit-font-smoothing: antialiased; line-height:1.6; }
+  button, input, textarea, select{ font-family: inherit; }
+
+  @keyframes fadeUp{ from{ opacity:0; transform: translateY(10px);} to{ opacity:1; transform:translateY(0);} }
+  @keyframes popIn{ from{ opacity:0; transform: scale(.94);} to{ opacity:1; transform:scale(1);} }
+  @keyframes ping{ 0%{ box-shadow: 0 0 0 0 var(--accent-glow);} 100%{ box-shadow: 0 0 0 8px rgba(46,110,98,0);} }
+  @keyframes bellShake{ 0%,100%{ transform: rotate(0);} 20%{ transform: rotate(14deg);} 40%{ transform: rotate(-10deg);} 60%{ transform: rotate(6deg);} 80%{ transform: rotate(-4deg);} }
+
+  /* ---------- Login ---------- */
+  #view-login{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;
+    background: radial-gradient(560px 420px at 15% 10%, var(--accent-soft) 0%, transparent 65%), radial-gradient(480px 380px at 90% 85%, #FBEAF0 0%, transparent 60%), var(--bg); }
+  .login-card{ width: 380px; max-width:100%; background: var(--surface); border:1px solid var(--line); border-radius: 22px; padding: 38px 34px 30px; box-shadow: 0 20px 60px rgba(38,51,46,0.10); animation: popIn .5s var(--ease); }
+  .login-mark{ width:56px;height:56px;border-radius:16px; background: linear-gradient(145deg, var(--accent), var(--accent-dark)); display:flex;align-items:center;justify-content:center; color:#fff; font-weight:800; font-size:22px; margin: 0 auto 18px; }
+  .login-title{ font-size:19px; font-weight:700; text-align:center; }
+  .login-sub{ font-size:13.5px; color:var(--ink-soft); text-align:center; margin-top:5px; margin-bottom:26px; }
+  .login-field{ margin-bottom:14px; }
+  .login-field label{ font-size:12.5px; font-weight:600; color:var(--ink-soft); display:block; margin-bottom:6px; }
+  .login-field input{ width:100%; padding:12px 14px; border-radius:11px; border:1px solid var(--line); font-size:14.5px; outline:none; transition: all .18s ease; background: var(--surface-2); }
+  .login-field input:focus{ border-color:var(--accent); box-shadow:0 0 0 4px var(--accent-glow); background:var(--surface); }
+  .login-btn{ width:100%; padding:13px; border-radius:11px; border:none; background: var(--accent); color:#fff; font-weight:700; font-size:15px; cursor:pointer; margin-top:6px; transition: all .15s var(--ease); box-shadow: 0 8px 20px var(--accent-glow); }
+  .login-btn:hover{ background: var(--accent-dark); transform: translateY(-1px); }
+  .login-btn:disabled{ opacity:.6; cursor:not-allowed; transform:none; }
+  .login-error{ font-size:12.5px; color:var(--danger); background:var(--danger-soft); padding:9px 12px; border-radius:8px; margin-bottom:14px; display:none; }
+  .login-error.show{ display:block; }
+  .login-hint{ font-size:11.5px; color:var(--ink-faint); text-align:center; margin-top:16px; }
+  .login-switch{ text-align:center; font-size:13px; color:var(--ink-soft); margin-top:16px; }
+  .login-switch a{ color:var(--accent); font-weight:700; cursor:pointer; }
+  .role-chip-row{ display:flex; gap:8px; margin-bottom:14px; }
+  .role-chip{ flex:1; text-align:center; padding:10px 6px; border-radius:10px; border:1.5px solid var(--line); font-size:13px; font-weight:600; color:var(--ink-soft); cursor:pointer; transition: all .15s ease; }
+  .role-chip.selected{ border-color:var(--accent); background:var(--accent-soft); color:var(--accent-dark); }
+
+  /* ---------- Shell ---------- */
+  #view-app{ display:none; }
+  .app{ display:flex; min-height:100vh; }
+  .sidebar{ width: 248px; flex-shrink:0; background: var(--surface); border-left: 1px solid var(--line); padding: 22px 16px; display:flex; flex-direction:column; gap:4px; position: sticky; top:0; height:100vh; }
+  .brand{ display:flex; align-items:center; gap:10px; padding: 4px 8px 20px; }
+  .brand-mark{ width:36px; height:36px; border-radius:11px; background: linear-gradient(145deg, var(--accent), var(--accent-dark)); display:flex;align-items:center;justify-content:center; color:#fff; font-weight:800; font-size:15px; flex-shrink:0; }
+  .brand-text{ font-weight:700; font-size:15px; }
+  .brand-sub{ font-size:11px; color:var(--ink-faint); margin-top:1px; }
+  .nav-item{ display:flex; align-items:center; gap:10px; padding: 11px 12px; border-radius: var(--radius-sm); color: var(--ink-soft); font-size:14.5px; font-weight:500; cursor:pointer; border:none; background:transparent; width:100%; text-align:right; transition: background .15s ease, color .15s ease; position:relative; }
+  .nav-item:hover{ background: var(--surface-2); color:var(--ink); }
+  .nav-item.active{ background: var(--accent-soft); color: var(--accent-dark); }
+  .nav-icon{ width:18px; height:18px; flex-shrink:0; }
+  .nav-badge{ margin-right:auto; background:var(--danger); color:#fff; font-size:10.5px; font-weight:700; border-radius:20px; padding:1px 6px; min-width:16px; text-align:center; }
+  .sidebar-footer{ margin-top:auto; padding-top:14px; border-top:1px solid var(--line); }
+  .role-pill{ display:flex; align-items:center; gap:9px; padding: 9px 11px; border-radius: var(--radius-sm); background: var(--surface-2); font-size:13px; }
+  .role-avatar{ width:30px;height:30px;border-radius:50%; background: linear-gradient(145deg, var(--accent), var(--accent-dark)); color:#fff; display:flex;align-items:center;justify-content:center; font-size:12px; font-weight:700; flex-shrink:0; }
+  .role-name{ font-weight:700; font-size:13px; }
+  .role-label{ font-size:11px; color:var(--ink-faint); }
+  .logout-btn{ margin-top:8px; width:100%; font-size:12px; color: var(--danger); background:none; border:none; cursor:pointer; padding:6px 4px; text-align:right; border-radius:6px; transition: background .15s; }
+  .logout-btn:hover{ background: var(--danger-soft); }
+
+  .main{ flex:1; min-width:0; padding: 26px 32px 60px; max-width: 1240px; }
+  .topbar{ display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; gap:14px; flex-wrap:wrap; }
+  .page-title{ font-size:21px; font-weight:800; display:flex; align-items:center; gap:10px; }
+  .page-sub{ font-size:13.5px; color:var(--ink-soft); margin-top:3px; }
+
+  .bell-btn{ position:relative; width:38px; height:38px; border-radius:10px; border:1px solid var(--line); background:var(--surface); display:flex; align-items:center; justify-content:center; cursor:pointer; }
+  .bell-btn.ring svg{ animation: bellShake .5s ease; }
+  .bell-dot{ position:absolute; top:6px; left:6px; width:8px; height:8px; border-radius:50%; background:var(--danger); display:none; }
+  .bell-dot.show{ display:block; }
+
+  .btn{ display:inline-flex; align-items:center; gap:7px; padding: 10px 17px; border-radius: var(--radius-sm); font-size:14px; font-weight:600; border:1px solid var(--line); background: var(--surface); color: var(--ink); cursor:pointer; transition: all .15s var(--ease); white-space:nowrap; }
+  .btn:hover{ border-color: var(--ink-faint); transform: translateY(-1px); }
+  .btn:disabled{ opacity:.55; cursor:not-allowed; transform:none; }
+  .btn-primary{ background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 6px 16px var(--accent-glow); }
+  .btn-primary:hover{ background: var(--accent-dark); border-color:var(--accent-dark); }
+  .btn-ghost{ border-color:transparent; background:transparent; }
+  .btn-ghost:hover{ background: var(--surface-2); }
+  .btn-sm{ padding:7px 12px; font-size:13px; }
+
+  .search-box{ position:relative; width: 260px; max-width:100%; }
+  .search-box input{ width:100%; padding: 10px 40px 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--line); background: var(--surface); font-size:14px; outline:none; }
+  .search-box input:focus{ border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+  .search-box svg{ position:absolute; right:13px; top:50%; transform:translateY(-50%); width:16px; height:16px; color: var(--ink-faint); pointer-events:none; }
+  .sort-select{ padding:9px 34px 9px 12px; border-radius:var(--radius-sm); border:1px solid var(--line); background: var(--surface); font-size:13.5px; cursor:pointer; outline:none; color:var(--ink); appearance:none; }
+
+  .list-card{ background: var(--surface); border:1px solid var(--line); border-radius: var(--radius-lg); overflow:hidden; }
+  .list-head{ display:flex; align-items:center; padding: 13px 20px; font-size:11.5px; color: var(--ink-faint); font-weight:700; border-bottom:1px solid var(--line); background: var(--surface-2); }
+  .col-name{ flex:1.4; } .col-meta{ width:120px; } .col-file{ width:110px; } .col-visit{ width:120px; } .col-action{ width:36px; }
+  .patient-row{ display:flex; align-items:center; padding: 14px 20px; border-bottom:1px solid var(--line); cursor:pointer; transition: background .12s ease; animation: fadeUp .35s var(--ease) backwards; }
+  .patient-row:last-child{ border-bottom:none; }
+  .patient-row:hover{ background: var(--surface-2); }
+  .patient-identity{ display:flex; align-items:center; gap:12px; flex:1.4; min-width:0; }
+  .status-dot{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .dot-recent{ background: var(--accent); } .dot-mid{ background: var(--warn); } .dot-old{ background: var(--ink-faint); }
+  .patient-avatar{ width:38px;height:38px;border-radius:50%; background: var(--accent-soft); color:var(--accent-dark); display:flex;align-items:center;justify-content:center; font-size:13.5px; font-weight:700; flex-shrink:0; }
+  .patient-name{ font-weight:700; font-size:14.5px; }
+  .patient-file{ font-size:12px; color:var(--ink-faint); margin-top:1px; }
+  .col-meta-text, .col-file-text, .col-visit-text{ font-size:13.5px; color:var(--ink-soft); }
+  .chevron{ width:16px; height:16px; color:var(--ink-faint); flex-shrink:0; }
+  .empty-state{ padding: 50px 20px; text-align:center; color: var(--ink-faint); }
+  .empty-state svg{ width:36px; height:36px; margin-bottom:10px; opacity:.5; }
+  .loading-state{ padding: 50px 20px; text-align:center; color: var(--ink-faint); font-size:13.5px; }
+
+  .back-link{ display:inline-flex; align-items:center; gap:6px; font-size:13.5px; color:var(--ink-soft); font-weight:600; cursor:pointer; margin-bottom:16px; background:none; border:none; padding:4px 0; }
+  .back-link:hover{ color:var(--ink); }
+  .back-link svg{ width:15px;height:15px; }
+  .detail-header{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; gap:16px; flex-wrap:wrap; }
+  .detail-identity{ display:flex; align-items:center; gap:14px; }
+  .detail-avatar{ width:54px;height:54px;border-radius:50%; background: linear-gradient(145deg, var(--accent-soft), var(--surface-2)); color:var(--accent-dark); display:flex;align-items:center;justify-content:center; font-size:19px; font-weight:800; }
+  .detail-name{ font-size:19px; font-weight:800; }
+  .detail-meta{ font-size:13px; color:var(--ink-soft); margin-top:4px; display:flex; flex-wrap:wrap; gap:5px 10px; }
+
+  .detail-grid{ display:grid; grid-template-columns: 1.6fr 1fr; gap:18px; align-items:start; }
+  .panel{ background: var(--surface); border:1px solid var(--line); border-radius: var(--radius-lg); padding: 22px 24px; animation: fadeUp .4s var(--ease) backwards; }
+  .panel + .panel{ margin-top:16px; }
+  .panel-title{ font-size:14.5px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; }
+  .field-group{ margin-bottom:16px; } .field-group:last-child{ margin-bottom:0; }
+  .field-label{ font-size:12.5px; color:var(--ink-soft); font-weight:600; margin-bottom:7px; }
+  .lock-badge{ display:inline-flex; align-items:center; gap:4px; font-size:10.5px; color:var(--warn); background: var(--warn-soft); padding:2px 7px; border-radius: 20px; font-weight:700; }
+  .lock-badge svg{ width:10px;height:10px; }
+  textarea, .field-input{ width:100%; border:1px solid var(--line); border-radius: var(--radius-sm); padding: 11px 13px; font-size:14px; color: var(--ink); resize:vertical; outline:none; transition: all .15s ease; background: var(--surface); line-height:1.7; }
+  textarea:focus, .field-input:focus{ border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+  textarea:disabled, .field-input:disabled{ background: var(--surface-2); color: var(--ink-faint); cursor:not-allowed; }
+  .field-grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+  .visit-timeline, .comment-thread{ display:flex; flex-direction:column; gap:0; max-height:340px; overflow-y:auto; }
+  .visit-entry{ padding: 13px 0; border-bottom: 1px solid var(--line); }
+  .visit-entry:last-child{ border-bottom:none; }
+  .visit-entry:first-child{ padding-top:0; }
+  .visit-date{ font-size:12px; color:var(--ink-faint); font-weight:700; margin-bottom:4px; }
+  .visit-note{ font-size:13.5px; }
+
+  .comment-item{ padding:10px 0; border-bottom:1px solid var(--line); }
+  .comment-item:last-child{ border-bottom:none; }
+  .comment-head{ display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px; }
+  .comment-author{ font-weight:700; }
+  .comment-author.me{ color:var(--accent-dark); }
+  .comment-time{ color:var(--ink-faint); }
+  .comment-text{ font-size:13.5px; }
+  .comment-input-row{ display:flex; gap:8px; margin-top:12px; }
+  .comment-input-row input{ flex:1; }
+
+  .action-row{ display:flex; gap:9px; margin-top:18px; }
+  .sidenote{ display:flex; gap:9px; align-items:flex-start; font-size:12.5px; color:var(--ink-faint); background: var(--surface-2); padding: 11px 13px; border-radius: var(--radius-sm); margin-top:16px; line-height:1.7; }
+  .sidenote svg{ width:14px;height:14px; flex-shrink:0; margin-top:2px; }
+
+  .chart-row{ display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:16px; }
+  .stat-grid{ display:grid; grid-template-columns: repeat(4, 1fr); gap:14px; margin-bottom: 24px; }
+  .stat-card{ background: var(--surface); border:1px solid var(--line); border-radius: var(--radius-md); padding: 18px 20px; }
+  .stat-label{ font-size:12.5px; color:var(--ink-soft); font-weight:600; }
+  .stat-value{ font-size:27px; font-weight:800; margin-top:7px; }
+  .stat-delta{ font-size:12px; color:var(--accent); margin-top:4px; font-weight:600; }
+  .chart-card{ background: var(--surface); border:1px solid var(--line); border-radius: var(--radius-lg); padding: 20px 22px; }
+  .chart-card-title{ font-size:14px; font-weight:700; margin-bottom:16px; }
+  .donut-wrap{ display:flex; align-items:center; gap:22px; flex-wrap:wrap; }
+  .donut-legend{ display:flex; flex-direction:column; gap:10px; font-size:13px; }
+  .legend-item{ display:flex; align-items:center; gap:8px; }
+  .legend-dot{ width:9px;height:9px;border-radius:50%; }
+  .bar-chart{ display:flex; align-items:flex-end; gap:10px; height:150px; padding-top:10px; }
+  .bar-col{ flex:1; display:flex; flex-direction:column; align-items:center; gap:8px; height:100%; justify-content:flex-end; }
+  .bar{ width:100%; max-width:34px; border-radius: 6px 6px 0 0; background: var(--accent); }
+  .bar-age-label{ font-size:11px; color:var(--ink-faint); }
+
+  /* Reminders */
+  .reminder-item{ display:flex; align-items:flex-start; gap:10px; padding:11px 0; border-bottom:1px solid var(--line); }
+  .reminder-item:last-child{ border-bottom:none; }
+  .reminder-check{ width:18px;height:18px; border-radius:6px; border:1.5px solid var(--line); flex-shrink:0; margin-top:2px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .reminder-check.done{ background:var(--accent); border-color:var(--accent); color:#fff; }
+  .reminder-title{ font-size:13.5px; font-weight:600; }
+  .reminder-title.done{ text-decoration:line-through; color:var(--ink-faint); }
+  .reminder-due{ font-size:11.5px; color:var(--ink-faint); margin-top:2px; }
+  .reminder-due.overdue{ color:var(--danger); font-weight:600; }
+
+  .toast{ position:fixed; bottom:24px; left:50%; transform: translateX(-50%) translateY(20px); background: var(--ink); color:#fff; padding: 12px 22px; border-radius: 30px; font-size:13.5px; font-weight:600; box-shadow: 0 8px 24px rgba(0,0,0,0.18); opacity:0; pointer-events:none; transition: all .25s ease; z-index: 100; display:flex; align-items:center; gap:8px; }
+  .toast.show{ opacity:1; transform: translateX(-50%) translateY(0); }
+  .toast svg{ width:15px;height:15px; color:#8FE0C6; }
+  .toast.error svg{ color:#F0A99B; }
+
+  .modal-backdrop{ position:fixed; inset:0; background: rgba(38,51,46,0.4); display:none; align-items:center; justify-content:center; z-index: 90; padding:20px; }
+  .modal-backdrop.show{ display:flex; }
+  .modal{ background: var(--surface); border-radius: var(--radius-lg); padding: 26px 28px; width: 520px; max-width:100%; max-height: 88vh; overflow-y:auto; animation: popIn .28s var(--ease); }
+  .modal-title{ font-size:16.5px; font-weight:800; margin-bottom:6px; }
+  .modal-sub{ font-size:12.5px; color:var(--ink-soft); margin-bottom:18px; }
+  .modal-section-label{ font-size:11.5px; font-weight:700; color:var(--ink-faint); margin: 16px 0 10px; text-transform:uppercase; }
+  .modal-section-label:first-child{ margin-top:0; }
+  .modal-actions{ display:flex; gap:9px; margin-top:20px; }
+  .form-row{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
+  .field-input-modal{ width:100%; border:1px solid var(--line); border-radius: var(--radius-sm); padding: 10px 12px; font-size:14px; outline:none; }
+  .field-input-modal:focus{ border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+  .error-text{ font-size:12px; color:var(--danger); margin-top:5px; display:none; }
+  .error-text.show{ display:block; }
+  .file-number-row{ display:flex; gap:8px; align-items:center; }
+  .file-number-row .field-input-modal{ flex:1; }
+  .auto-toggle{ display:flex; align-items:center; gap:6px; font-size:12px; color:var(--ink-soft); white-space:nowrap; cursor:pointer; }
+
+  .mobile-topbar{ display:none; }
+  .sidebar-overlay{ display:none; }
+
+  @media (max-width: 880px){
+    .app{ flex-direction:column; }
+    .sidebar{ position:fixed; top:0; right:0; height:100vh; z-index:80; transform: translateX(100%); transition: transform .25s var(--ease); }
+    .sidebar.open{ transform:translateX(0); }
+    .sidebar-overlay{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.3); z-index:70; }
+    .sidebar-overlay.show{ display:block; }
+    .mobile-topbar{ display:flex; align-items:center; justify-content:space-between; padding: 14px 16px; background: var(--surface); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:60; }
+    .menu-btn{ background:none; border:none; cursor:pointer; width:36px;height:36px; display:flex;align-items:center;justify-content:center; color: var(--ink); }
+    .main{ padding: 18px 14px 50px; }
+    .stat-grid{ grid-template-columns: repeat(2,1fr); }
+    .detail-grid{ grid-template-columns: 1fr; }
+    .chart-row{ grid-template-columns: 1fr; }
+    .list-head{ display:none; }
+    .col-meta, .col-file, .col-visit{ display:none; }
+    .search-box{ width:100%; }
+    .form-row, .field-grid-2{ grid-template-columns:1fr; }
+    .modal{ width:100%; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= LOGIN ================= -->
+<div id="view-login">
+  <div class="login-card">
+    <div class="login-mark">م</div>
+    <div class="login-title">پرونده‌های مطب</div>
+    <div class="login-sub">ورود به سامانه</div>
+    <div class="login-error" id="login-error"></div>
+    <div class="login-field"><label>ایمیل</label><input type="email" id="login-email" placeholder="ایمیل خود را وارد کنید"></div>
+    <div class="login-field"><label>رمز عبور</label><input type="password" id="login-pass" placeholder="••••••••"></div>
+    <button class="login-btn" id="login-btn" onclick="doLogin()">ورود به سامانه</button>
+    <div class="login-switch">حساب ندارید؟ <a onclick="showSignup()">ثبت‌نام کنید</a></div>
+    <div class="login-hint" id="connection-status">در حال اتصال به سرور…</div>
+  </div>
+</div>
+
+<div id="view-signup" style="display:none;">
+  <div class="login-card">
+    <div class="login-mark">م</div>
+    <div class="login-title">ثبت‌نام در سامانه</div>
+    <div class="login-sub">فقط با کد دعوتی که از دکتر رحیمی دریافت کرده‌اید</div>
+    <div class="login-error" id="signup-error"></div>
+
+    <div class="role-chip-row">
+      <div class="role-chip selected" id="signup-chip-doctor" onclick="selectSignupRole('doctor')">دکتر</div>
+      <div class="role-chip" id="signup-chip-nutrition" onclick="selectSignupRole('nutrition')">متخصص تغذیه</div>
+    </div>
+
+    <div class="login-field"><label>نام و نام خانوادگی</label><input type="text" id="signup-name" placeholder="مثلاً دکتر رحیمی"></div>
+    <div class="login-field"><label>ایمیل</label><input type="email" id="signup-email" placeholder="ایمیل خود را وارد کنید"></div>
+    <div class="login-field"><label>رمز عبور</label><input type="password" id="signup-pass" placeholder="حداقل ۶ کاراکتر"></div>
+    <div class="login-field"><label>کد دعوت</label><input type="text" id="signup-invite" placeholder="مثلاً DOC-XXXXX یا NUT-XXXXX"></div>
+    <button class="login-btn" id="signup-btn" onclick="doSignup()">ساخت حساب</button>
+    <div class="login-switch">حساب دارید؟ <a onclick="showLogin()">وارد شوید</a></div>
+  </div>
+</div>
+
+<!-- ================= APP ================= -->
+<div id="view-app">
+<div class="sidebar-overlay" id="overlay" onclick="toggleSidebar(false)"></div>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand"><div class="brand-mark">م</div><div><div class="brand-text">پرونده‌های مطب</div><div class="brand-sub" id="clinic-sub">آنلاین</div></div></div>
+    <button class="nav-item active" onclick="navigate('list')" id="nav-list">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+      لیست بیماران
+    </button>
+    <button class="nav-item" onclick="navigate('stats')" id="nav-stats">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>
+      آمار مطب
+    </button>
+    <button class="nav-item" onclick="navigate('chat')" id="nav-chat">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+      گفتگوی کلی
+      <span class="nav-badge" id="chat-badge" style="display:none;">0</span>
+    </button>
+    <button class="nav-item" onclick="navigate('reminders')" id="nav-reminders">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+      یادآوری‌ها
+      <span class="nav-badge" id="reminder-badge" style="display:none;">0</span>
+    </button>
+    <div class="sidebar-footer">
+      <div class="role-pill"><div class="role-avatar" id="role-avatar">ر</div><div><div class="role-name" id="role-name">—</div><div class="role-label" id="role-label">—</div></div></div>
+      <button class="logout-btn" onclick="doLogout()">خروج از حساب</button>
+    </div>
+  </aside>
+
+  <div style="flex:1; min-width:0; display:flex; flex-direction:column;">
+    <div class="mobile-topbar">
+      <button class="menu-btn" onclick="toggleSidebar(true)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+      <div class="brand"><div class="brand-mark" style="width:28px;height:28px;font-size:13px;">م</div><div class="brand-text" style="font-size:14px;">پرونده‌های مطب</div></div>
+      <div style="width:36px;"></div>
+    </div>
+
+    <main class="main">
+      <!-- LIST -->
+      <section id="view-list">
+        <div class="topbar">
+          <div><div class="page-title">بیماران</div><div class="page-sub" id="patient-count-sub">در حال بارگذاری…</div></div>
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <div class="search-box"><input type="text" id="search-input" placeholder="جستجو با نام، کد ملی یا شماره پرونده…" oninput="renderList()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></div>
+            <select class="sort-select" id="sort-select" onchange="renderList()">
+              <option value="recent">جدیدترین ویزیت</option><option value="name">نام (الفبا)</option><option value="age">سن</option><option value="file">شماره پرونده</option>
+            </select>
+            <button class="bell-btn" id="bell-btn" onclick="navigate('chat')">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+              <span class="bell-dot" id="bell-dot"></span>
+            </button>
+            <button class="btn btn-primary" onclick="openNewPatientModal()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+              بیمار جدید
+            </button>
+          </div>
+        </div>
+        <div class="list-card">
+          <div class="list-head"><div class="col-name">نام بیمار</div><div class="col-file">شماره پرونده</div><div class="col-meta">سن / جنسیت</div><div class="col-visit">آخرین ویزیت</div><div class="col-action"></div></div>
+          <div id="patient-list-body"><div class="loading-state">در حال بارگذاری پرونده‌ها…</div></div>
+        </div>
+      </section>
+
+      <!-- DETAIL -->
+      <section id="view-detail" style="display:none;">
+        <button class="back-link" onclick="navigate('list')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>بازگشت به لیست</button>
+        <div class="detail-header">
+          <div class="detail-identity">
+            <div class="detail-avatar" id="detail-avatar">م</div>
+            <div><div class="detail-name" id="detail-name">—</div><div class="detail-meta" id="detail-meta"></div></div>
+          </div>
+        </div>
+        <div class="detail-grid">
+          <div>
+            <div class="panel">
+              <div class="panel-title">اطلاعات تماس و بیمه</div>
+              <div class="field-grid-2">
+                <div class="field-group"><div class="field-label">کد ملی</div><input class="field-input" id="field-nationalid"></div>
+                <div class="field-group"><div class="field-label">شماره تماس</div><input class="field-input" id="field-phone"></div>
+                <div class="field-group"><div class="field-label">شماره بیمه</div><input class="field-input" id="field-insurance"></div>
+                <div class="field-group"><div class="field-label">شغل</div><input class="field-input" id="field-job"></div>
+                <div class="field-group" style="grid-column:1/-1;"><div class="field-label">آدرس</div><input class="field-input" id="field-address"></div>
+                <div class="field-group" style="grid-column:1/-1;"><div class="field-label">ارجاع‌دهنده</div><input class="field-input" id="field-referrer"></div>
+              </div>
+            </div>
+            <div class="panel"><div class="panel-title">شرح حال</div><textarea id="field-history" rows="4"></textarea></div>
+            <div class="panel">
+              <div class="panel-title"><span>تشخیص و درمان</span><span class="lock-badge" id="dx-lock-badge" style="display:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>فقط دکتر</span></div>
+              <textarea id="field-diagnosis" rows="3"></textarea>
+            </div>
+            <div class="panel">
+              <div class="panel-title">یادداشت تغذیه</div>
+              <textarea id="field-nutrition" rows="3"></textarea>
+              <div class="sidenote"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>این بخش برای متخصص تغذیه هم قابل مشاهده و ویرایش است.</div>
+            </div>
+            <div class="action-row"><button class="btn btn-primary" id="save-btn" onclick="saveRecord()">ذخیره تغییرات</button><button class="btn" onclick="addVisit()">ثبت ویزیت جدید</button></div>
+          </div>
+          <div>
+            <div class="panel"><div class="panel-title">تاریخچه ویزیت‌ها</div><div class="visit-timeline" id="visit-timeline"></div></div>
+            <div class="panel">
+              <div class="panel-title">گفتگو درباره‌ی این پرونده</div>
+              <div class="comment-thread" id="comment-thread"></div>
+              <div class="comment-input-row"><input class="field-input" id="comment-input" placeholder="یادداشتی برای همکار بنویس…" onkeydown="if(event.key==='Enter') sendComment()"><button class="btn btn-primary btn-sm" onclick="sendComment()">ارسال</button></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STATS -->
+      <section id="view-stats" style="display:none;">
+        <div class="topbar"><div><div class="page-title">آمار مطب</div><div class="page-sub">نمای کلی بیماران و ویزیت‌ها</div></div></div>
+        <div class="stat-grid">
+          <div class="stat-card"><div class="stat-label">کل بیماران</div><div class="stat-value" id="stat-total">—</div></div>
+          <div class="stat-card"><div class="stat-label">میانگین سن</div><div class="stat-value" id="stat-avgage">—</div></div>
+          <div class="stat-card"><div class="stat-label">کل ویزیت‌ها</div><div class="stat-value" id="stat-visits">—</div></div>
+          <div class="stat-card"><div class="stat-label">نسبت مراجعین مکرر</div><div class="stat-value" id="stat-repeat">—</div></div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-card">
+            <div class="chart-card-title">توزیع جنسیتی</div>
+            <div class="donut-wrap">
+              <svg width="120" height="120" viewBox="0 0 120 120" id="gender-donut">
+                <circle cx="60" cy="60" r="48" fill="none" stroke="#EEF4F2" stroke-width="16"/>
+              </svg>
+              <div class="donut-legend" id="gender-legend"></div>
+            </div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-title">توزیع سنی بیماران</div>
+            <div class="bar-chart" id="age-bars"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CHAT -->
+      <section id="view-chat" style="display:none;">
+        <div class="topbar"><div><div class="page-title">گفتگوی کلی</div><div class="page-sub">یادداشت‌های عمومی بین دکتر و متخصص تغذیه (بدون وصل به پرونده‌ی خاص)</div></div></div>
+        <div class="panel">
+          <div class="comment-thread" id="general-thread" style="max-height:460px;"></div>
+          <div class="comment-input-row"><input class="field-input" id="general-input" placeholder="پیامی بنویس…" onkeydown="if(event.key==='Enter') sendGeneralMessage()"><button class="btn btn-primary btn-sm" onclick="sendGeneralMessage()">ارسال</button></div>
+        </div>
+      </section>
+
+      <!-- REMINDERS -->
+      <section id="view-reminders" style="display:none;">
+        <div class="topbar">
+          <div><div class="page-title">یادآوری‌ها</div><div class="page-sub">پیگیری‌های زمان‌بندی‌شده برای بیماران</div></div>
+          <button class="btn btn-primary" onclick="openReminderModal()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>یادآوری جدید
+          </button>
+        </div>
+        <div class="panel"><div id="reminder-list"></div></div>
+      </section>
+    </main>
+  </div>
+</div>
+</div>
+
+<!-- New Patient Modal -->
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal">
+    <div class="modal-title">ثبت بیمار جدید</div>
+    <div class="modal-sub">فقط نام و سن الزامی است — بقیه‌ی فیلدها اختیاری‌اند.</div>
+    <div class="modal-section-label">اطلاعات پایه</div>
+    <div class="form-row"><div><input class="field-input-modal" id="new-name" placeholder="نام و نام خانوادگی"><div class="error-text" id="err-name">نام بیمار را وارد کنید</div></div><div><input class="field-input-modal" id="new-age" placeholder="سن" inputmode="numeric"><div class="error-text" id="err-age">سن معتبر وارد کنید</div></div></div>
+    <div class="form-row"><select class="field-input-modal" id="new-gender"><option value="خانم">خانم</option><option value="آقا">آقا</option></select><input class="field-input-modal" id="new-phone" placeholder="شماره تماس (اختیاری)"></div>
+    <div class="modal-section-label">شماره پرونده</div>
+    <div class="file-number-row"><input class="field-input-modal" id="new-filenum" placeholder="مثلاً ۰۰۴۳"><label class="auto-toggle"><input type="checkbox" id="new-filenum-auto" checked onchange="toggleAutoFile()"> تولید خودکار</label></div>
+    <div class="modal-section-label">اطلاعات تکمیلی (اختیاری)</div>
+    <div class="form-row"><input class="field-input-modal" id="new-nationalid" placeholder="کد ملی"><input class="field-input-modal" id="new-insurance" placeholder="شماره بیمه"></div>
+    <div class="form-row"><input class="field-input-modal" id="new-job" placeholder="شغل"><input class="field-input-modal" id="new-referrer" placeholder="ارجاع‌دهنده"></div>
+    <input class="field-input-modal" id="new-address" placeholder="آدرس" style="margin-bottom:12px;">
+    <textarea class="field-input" id="new-history" rows="2" placeholder="شرح حال اولیه (اختیاری)"></textarea>
+    <div class="modal-actions"><button class="btn btn-primary" id="create-patient-btn" onclick="createPatient()">ثبت پرونده</button><button class="btn btn-ghost" onclick="closeModal('modal-backdrop')">انصراف</button></div>
+  </div>
+</div>
+
+<!-- New Reminder Modal -->
+<div class="modal-backdrop" id="reminder-modal-backdrop">
+  <div class="modal">
+    <div class="modal-title">یادآوری جدید</div>
+    <div class="form-row" style="grid-template-columns:1fr;"><input class="field-input-modal" id="reminder-title" placeholder="عنوان یادآوری (مثلاً پیگیری آزمایش قند خون)"></div>
+    <div class="form-row">
+      <select class="field-input-modal" id="reminder-patient"><option value="">— بدون پرونده‌ی خاص —</option></select>
+      <input class="field-input-modal" id="reminder-date" type="date">
+    </div>
+    <div class="error-text" id="err-reminder">عنوان و تاریخ را وارد کنید</div>
+    <div class="modal-actions"><button class="btn btn-primary" onclick="createReminder()">ثبت یادآوری</button><button class="btn btn-ghost" onclick="closeModal('reminder-modal-backdrop')">انصراف</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg><span id="toast-text">ذخیره شد</span></div>
+
+<script>
+/* ================= Supabase connection ================= */
+const SUPABASE_URL = 'https://jhinlcgwnsszcwioytzy.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_50Dy0y2IMcauw9BFXERckg_TsJLa3E-';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUser = null;
+let currentProfile = null; // { id, full_name, role }
+let patients = [];
+let profilesById = {};
+let activePatientId = null;
+let generalMessages = [];
+let reminders = [];
+let lastSeenGeneralAt = localStorage.getItem('lastSeenGeneralAt') || null; // ok to use localStorage here, it's just a UI marker, not app data storage in the "no browser storage in artifacts" sense — this is a static served file, not a Claude artifact.
+
+/* ================= Utilities ================= */
+function toPersianDigits(n){ const map=['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹']; return String(n).replace(/[0-9]/g, d=>map[d]); }
+function initials(name){ return (name||'').trim().charAt(0) || '?'; }
+function fmtTime(iso){
+  const d = new Date(iso);
+  return d.toLocaleDateString('fa-IR', {month:'short', day:'numeric'}) + ' — ' + d.toLocaleTimeString('fa-IR', {hour:'2-digit', minute:'2-digit'});
+}
+let toastTimer;
+function showToast(text, isError){
+  const el = document.getElementById('toast');
+  document.getElementById('toast-text').textContent = text;
+  el.classList.toggle('error', !!isError);
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> el.classList.remove('show'), 2600);
+}
+function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+
+/* ================= Auth: signup ================= */
+let selectedSignupRole = 'doctor';
+function selectSignupRole(role){
+  selectedSignupRole = role;
+  document.getElementById('signup-chip-doctor').classList.toggle('selected', role==='doctor');
+  document.getElementById('signup-chip-nutrition').classList.toggle('selected', role==='nutrition');
+}
+function showSignup(){ document.getElementById('view-login').style.display='none'; document.getElementById('view-signup').style.display='flex'; }
+function showLogin(){ document.getElementById('view-signup').style.display='none'; document.getElementById('view-login').style.display='flex'; }
+
+async function doSignup(){
+  const name = document.getElementById('signup-name').value.trim();
+  const email = document.getElementById('signup-email').value.trim();
+  const pass = document.getElementById('signup-pass').value;
+  const invite = document.getElementById('signup-invite').value.trim().toUpperCase();
+  const errEl = document.getElementById('signup-error');
+  const btn = document.getElementById('signup-btn');
+  errEl.classList.remove('show');
+
+  if(!name || !email || !pass || !invite){ errEl.textContent = 'همه‌ی فیلدها را پر کنید.'; errEl.classList.add('show'); return; }
+  if(pass.length < 6){ errEl.textContent = 'رمز عبور باید حداقل ۶ کاراکتر باشد.'; errEl.classList.add('show'); return; }
+
+  btn.disabled = true; btn.textContent = 'در حال بررسی کد دعوت…';
+
+  // Verify invite code matches the selected role and is not already used
+  const { data: inviteRow, error: inviteErr } = await sb.from('invite_codes').select('*').eq('code', invite).is('used_by', null).maybeSingle();
+  if(inviteErr || !inviteRow){
+    btn.disabled = false; btn.textContent = 'ساخت حساب';
+    errEl.textContent = 'کد دعوت نامعتبر یا قبلاً استفاده‌شده است.';
+    errEl.classList.add('show');
+    return;
+  }
+  if(inviteRow.role !== selectedSignupRole){
+    btn.disabled = false; btn.textContent = 'ساخت حساب';
+    errEl.textContent = `این کد دعوت برای نقش «${inviteRow.role === 'doctor' ? 'دکتر' : 'متخصص تغذیه'}» است، نه نقشی که انتخاب کردید.`;
+    errEl.classList.add('show');
+    return;
+  }
+
+  btn.textContent = 'در حال ساخت حساب…';
+  const { data, error } = await sb.auth.signUp({
+    email, password: pass,
+    options: { data: { full_name: name, role: selectedSignupRole } }
+  });
+  if(error){
+    btn.disabled = false; btn.textContent = 'ساخت حساب';
+    errEl.textContent = error.message.includes('already registered') ? 'این ایمیل قبلاً ثبت‌نام کرده است.' : 'خطا در ثبت‌نام — دوباره تلاش کنید.';
+    errEl.classList.add('show');
+    return;
+  }
+
+  // Mark invite code as used
+  await sb.from('invite_codes').update({ used_by: data.user.id, used_at: new Date().toISOString() }).eq('code', invite);
+
+  btn.disabled = false; btn.textContent = 'ساخت حساب';
+
+  if(data.session){
+    // Email confirmation is off — logged in immediately
+    currentUser = data.user;
+    await loadProfileAndEnter();
+  } else {
+    errEl.classList.remove('show');
+    showLogin();
+    showToast('حساب ساخته شد — ایمیل خود را برای تأیید بررسی کنید، سپس وارد شوید.');
+  }
+}
+
+/* ================= Auth: login ================= */
+async function doLogin(){
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const errEl = document.getElementById('login-error');
+  const btn = document.getElementById('login-btn');
+  errEl.classList.remove('show');
+  if(!email || !pass){ errEl.textContent = 'ایمیل و رمز عبور را وارد کنید.'; errEl.classList.add('show'); return; }
+  btn.disabled = true; btn.textContent = 'در حال ورود…';
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+  btn.disabled = false; btn.textContent = 'ورود به سامانه';
+  if(error){
+    errEl.textContent = 'ورود ناموفق بود — ایمیل یا رمز عبور را بررسی کنید.';
+    errEl.classList.add('show');
+    return;
+  }
+  currentUser = data.user;
+  await loadProfileAndEnter();
+}
+
+async function loadProfileAndEnter(){
+  const { data: profile, error } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+  if(error || !profile){
+    showToast('پروفایل این کاربر هنوز در دیتابیس ثبت نشده — با دکتر رحیمی تماس بگیرید.', true);
+    return;
+  }
+  currentProfile = profile;
+  document.getElementById('role-avatar').textContent = initials(profile.full_name);
+  document.getElementById('role-name').textContent = profile.full_name;
+  document.getElementById('role-label').textContent = profile.role === 'doctor' ? 'دسترسی کامل' : 'دسترسی محدود';
+  document.getElementById('view-login').style.display = 'none';
+  document.getElementById('view-app').style.display = 'block';
+  await Promise.all([loadPatients(), loadAllProfiles(), loadGeneralMessages(), loadReminders()]);
+  subscribeRealtime();
+  renderList();
+}
+
+async function doLogout(){
+  await sb.auth.signOut();
+  location.reload();
+}
+
+/* Restore session on page load */
+async function checkSession(){
+  const { data } = await sb.auth.getSession();
+  document.getElementById('connection-status').textContent = 'برای ورود، ایمیل و رمز خود را وارد کنید.';
+  if(data.session){
+    currentUser = data.session.user;
+    await loadProfileAndEnter();
+  }
+}
+
+/* ================= Data loading ================= */
+async function loadAllProfiles(){
+  const { data } = await sb.from('profiles').select('*');
+  profilesById = {};
+  (data||[]).forEach(p => profilesById[p.id] = p);
+}
+
+async function loadPatients(){
+  const { data, error } = await sb.from('patients').select('*, visits(*)').order('updated_at', {ascending:false});
+  if(error){ showToast('خطا در بارگذاری پرونده‌ها', true); return; }
+  patients = data || [];
+}
+
+async function loadGeneralMessages(){
+  const { data } = await sb.from('general_messages').select('*').order('created_at', {ascending:true});
+  generalMessages = data || [];
+  updateChatBadge();
+}
+
+async function loadReminders(){
+  const { data } = await sb.from('reminders').select('*').order('due_date', {ascending:true});
+  reminders = data || [];
+  updateReminderBadge();
+}
+
+/* ================= Realtime subscriptions ================= */
+function subscribeRealtime(){
+  sb.channel('patients-changes')
+    .on('postgres_changes', {event:'*', schema:'public', table:'patients'}, payload => {
+      loadPatients().then(() => { renderList(); if(activePatientId) refreshDetailIfOpen(); });
+      if(payload.eventType === 'UPDATE' && payload.new.updated_by !== currentProfile.id){
+        showToast('همکار شما یک پرونده را به‌روزرسانی کرد');
+      }
+    }).subscribe();
+
+  sb.channel('comments-changes')
+    .on('postgres_changes', {event:'INSERT', schema:'public', table:'patient_comments'}, payload => {
+      if(activePatientId === payload.new.patient_id) loadComments(activePatientId);
+      if(payload.new.author_id !== currentProfile.id) showToast('یادداشت جدیدی روی یک پرونده ثبت شد');
+    }).subscribe();
+
+  sb.channel('general-changes')
+    .on('postgres_changes', {event:'INSERT', schema:'public', table:'general_messages'}, payload => {
+      generalMessages.push(payload.new);
+      updateChatBadge();
+      if(document.getElementById('view-chat').style.display !== 'none') renderGeneralThread();
+      if(payload.new.author_id !== currentProfile.id) { ringBell(); showToast('پیام جدید در گفتگوی کلی'); }
+    }).subscribe();
+
+  sb.channel('reminders-changes')
+    .on('postgres_changes', {event:'*', schema:'public', table:'reminders'}, () => {
+      loadReminders().then(() => { if(document.getElementById('view-reminders').style.display !== 'none') renderReminders(); });
+    }).subscribe();
+}
+
+function ringBell(){
+  const bell = document.getElementById('bell-btn');
+  bell.classList.add('ring');
+  document.getElementById('bell-dot').classList.add('show');
+  setTimeout(()=> bell.classList.remove('ring'), 500);
+}
+function updateChatBadge(){
+  const unread = lastSeenGeneralAt ? generalMessages.filter(m => new Date(m.created_at) > new Date(lastSeenGeneralAt) && m.author_id !== (currentProfile && currentProfile.id)).length : generalMessages.length;
+  const badge = document.getElementById('chat-badge');
+  if(unread > 0){ badge.style.display='inline-block'; badge.textContent = toPersianDigits(unread); document.getElementById('bell-dot').classList.add('show'); }
+  else { badge.style.display='none'; document.getElementById('bell-dot').classList.remove('show'); }
+}
+function updateReminderBadge(){
+  const today = new Date().toISOString().slice(0,10);
+  const dueCount = reminders.filter(r => !r.done && r.due_date <= today).length;
+  const badge = document.getElementById('reminder-badge');
+  if(dueCount > 0){ badge.style.display='inline-block'; badge.textContent = toPersianDigits(dueCount); }
+  else badge.style.display = 'none';
+}
+
+/* ================= Navigation ================= */
+function navigate(view){
+  ['list','detail','stats','chat','reminders'].forEach(v => document.getElementById('view-'+v).style.display = (v===view?'block':'none'));
+  ['nav-list','nav-stats','nav-chat','nav-reminders'].forEach(id => document.getElementById(id).classList.remove('active'));
+  const navId = {list:'nav-list', stats:'nav-stats', chat:'nav-chat', reminders:'nav-reminders'}[view];
+  if(navId) document.getElementById(navId).classList.add('active');
+  toggleSidebar(false);
+  window.scrollTo(0,0);
+  if(view==='stats') renderStats();
+  if(view==='chat'){ renderGeneralThread(); lastSeenGeneralAt = new Date().toISOString(); localStorage.setItem('lastSeenGeneralAt', lastSeenGeneralAt); updateChatBadge(); }
+  if(view==='reminders') renderReminders();
+}
+function toggleSidebar(open){ document.getElementById('sidebar').classList.toggle('open', open); document.getElementById('overlay').classList.toggle('show', open); }
+
+function applyAccessControl(){
+  const dxField = document.getElementById('field-diagnosis');
+  const dxBadge = document.getElementById('dx-lock-badge');
+  if(currentProfile.role === 'nutrition'){ dxField.disabled = true; dxBadge.style.display = 'inline-flex'; }
+  else { dxField.disabled = false; dxBadge.style.display = 'none'; }
+}
+
+/* ================= Patient list ================= */
+function visitRecency(updatedAt){
+  const days = (Date.now() - new Date(updatedAt).getTime()) / 86400000;
+  if(days < 14) return 'recent';
+  if(days < 90) return 'mid';
+  return 'old';
+}
+function renderList(){
+  const q = document.getElementById('search-input').value.trim();
+  const sortBy = document.getElementById('sort-select').value;
+  const body = document.getElementById('patient-list-body');
+  let filtered = patients.filter(p => !q || (p.name||'').includes(q) || (p.file_number||'').includes(q) || (p.national_id||'').includes(q));
+  filtered = filtered.slice().sort((a,b) => {
+    if(sortBy==='name') return (a.name||'').localeCompare(b.name||'','fa');
+    if(sortBy==='age') return (b.age||0) - (a.age||0);
+    if(sortBy==='file') return (a.file_number||'').localeCompare(b.file_number||'','fa');
+    return new Date(b.updated_at) - new Date(a.updated_at);
+  });
+  document.getElementById('patient-count-sub').textContent = `${toPersianDigits(patients.length)} پرونده ثبت‌شده`;
+  if(filtered.length === 0){
+    body.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><p>${patients.length===0 ? 'هنوز پرونده‌ای ثبت نشده.' : 'بیماری با این مشخصات پیدا نشد.'}</p></div>`;
+    return;
+  }
+  body.innerHTML = filtered.map((p,i) => {
+    const rec = visitRecency(p.updated_at);
+    const dotClass = rec==='recent'?'dot-recent':rec==='mid'?'dot-mid':'dot-old';
+    const lastVisitLabel = p.visits && p.visits.length ? fmtTime(p.visits[0].created_at) : '—';
+    return `<div class="patient-row" style="animation-delay:${i*0.03}s" onclick="openPatient('${p.id}')">
+      <div class="patient-identity"><span class="status-dot ${dotClass}"></span><div class="patient-avatar">${initials(p.name)}</div><div><div class="patient-name">${p.name}</div><div class="patient-file">پرونده ${p.file_number}</div></div></div>
+      <div class="col-file col-file-text">${p.file_number}</div>
+      <div class="col-meta col-meta-text">${p.age?toPersianDigits(p.age):'—'} ساله، ${p.gender||'—'}</div>
+      <div class="col-visit col-visit-text">${lastVisitLabel}</div>
+      <div class="col-action"><svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></div>
+    </div>`;
+  }).join('');
+}
+
+/* ================= Patient detail ================= */
+async function openPatient(id){
+  activePatientId = id;
+  const p = patients.find(x => x.id === id);
+  if(!p) return;
+  document.getElementById('detail-avatar').textContent = initials(p.name);
+  document.getElementById('detail-name').textContent = p.name;
+  document.getElementById('detail-meta').innerHTML = `<span>${p.age?toPersianDigits(p.age):'—'} ساله، ${p.gender||'—'}</span><span>— پرونده ${p.file_number}</span>${p.phone?`<span>· ${p.phone}</span>`:''}${p.insurance?`<span>· ${p.insurance}</span>`:''}`;
+  document.getElementById('field-nationalid').value = p.national_id || '';
+  document.getElementById('field-phone').value = p.phone || '';
+  document.getElementById('field-insurance').value = p.insurance || '';
+  document.getElementById('field-job').value = p.job || '';
+  document.getElementById('field-address').value = p.address || '';
+  document.getElementById('field-referrer').value = p.referrer || '';
+  document.getElementById('field-history').value = p.history || '';
+  document.getElementById('field-diagnosis').value = p.diagnosis || '';
+  document.getElementById('field-nutrition').value = p.nutrition_notes || '';
+  document.getElementById('visit-timeline').innerHTML = (p.visits||[]).slice().sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).map(v =>
+    `<div class="visit-entry"><div class="visit-date">${fmtTime(v.created_at)}</div><div class="visit-note">${v.note}</div></div>`
+  ).join('') || '<div class="visit-entry"><div class="visit-note" style="color:var(--ink-faint)">هنوز ویزیتی ثبت نشده.</div></div>';
+  applyAccessControl();
+  navigate('detail');
+  loadComments(id);
+}
+
+function refreshDetailIfOpen(){ if(document.getElementById('view-detail').style.display !== 'none') openPatient(activePatientId); }
+
+async function saveRecord(){
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true; btn.textContent = 'در حال ذخیره…';
+  const payload = {
+    national_id: document.getElementById('field-nationalid').value,
+    phone: document.getElementById('field-phone').value,
+    insurance: document.getElementById('field-insurance').value,
+    job: document.getElementById('field-job').value,
+    address: document.getElementById('field-address').value,
+    referrer: document.getElementById('field-referrer').value,
+    history: document.getElementById('field-history').value,
+    nutrition_notes: document.getElementById('field-nutrition').value,
+    updated_at: new Date().toISOString(),
+    updated_by: currentProfile.id,
+  };
+  if(currentProfile.role === 'doctor') payload.diagnosis = document.getElementById('field-diagnosis').value;
+  const { error } = await sb.from('patients').update(payload).eq('id', activePatientId);
+  btn.disabled = false; btn.textContent = 'ذخیره تغییرات';
+  if(error){ showToast('خطا در ذخیره‌سازی', true); return; }
+  showToast('تغییرات ذخیره شد');
+  await loadPatients();
+}
+
+async function addVisit(){
+  const note = prompt('یادداشت ویزیت جدید را وارد کنید:');
+  if(!note || !note.trim()) return;
+  const { error } = await sb.from('visits').insert({ patient_id: activePatientId, note: note.trim(), created_by: currentProfile.id });
+  if(error){ showToast('خطا در ثبت ویزیت', true); return; }
+  await sb.from('patients').update({ updated_at: new Date().toISOString(), updated_by: currentProfile.id }).eq('id', activePatientId);
+  await loadPatients();
+  openPatient(activePatientId);
+  showToast('ویزیت جدید ثبت شد');
+}
+
+/* ---- Per-patient comments ---- */
+async function loadComments(patientId){
+  const { data } = await sb.from('patient_comments').select('*').eq('patient_id', patientId).order('created_at', {ascending:true});
+  renderCommentThread(data || []);
+}
+function renderCommentThread(comments){
+  const el = document.getElementById('comment-thread');
+  if(comments.length === 0){ el.innerHTML = '<div class="loading-state" style="padding:16px 0;">هنوز یادداشتی ثبت نشده.</div>'; return; }
+  el.innerHTML = comments.map(c => {
+    const author = profilesById[c.author_id];
+    const isMe = c.author_id === currentProfile.id;
+    return `<div class="comment-item"><div class="comment-head"><span class="comment-author ${isMe?'me':''}">${author?author.full_name:'—'}</span><span class="comment-time">${fmtTime(c.created_at)}</span></div><div class="comment-text">${c.message}</div></div>`;
+  }).join('');
+  el.scrollTop = el.scrollHeight;
+}
+async function sendComment(){
+  const input = document.getElementById('comment-input');
+  const msg = input.value.trim();
+  if(!msg || !activePatientId) return;
+  input.value = '';
+  const { error } = await sb.from('patient_comments').insert({ patient_id: activePatientId, author_id: currentProfile.id, message: msg });
+  if(error) showToast('ارسال ناموفق بود', true);
+  else loadComments(activePatientId);
+}
+
+/* ---- General chat ---- */
+function renderGeneralThread(){
+  const el = document.getElementById('general-thread');
+  if(generalMessages.length === 0){ el.innerHTML = '<div class="loading-state" style="padding:16px 0;">هنوز پیامی ثبت نشده.</div>'; return; }
+  el.innerHTML = generalMessages.map(m => {
+    const author = profilesById[m.author_id];
+    const isMe = m.author_id === currentProfile.id;
+    return `<div class="comment-item"><div class="comment-head"><span class="comment-author ${isMe?'me':''}">${author?author.full_name:'—'}</span><span class="comment-time">${fmtTime(m.created_at)}</span></div><div class="comment-text">${m.message}</div></div>`;
+  }).join('');
+  el.scrollTop = el.scrollHeight;
+}
+async function sendGeneralMessage(){
+  const input = document.getElementById('general-input');
+  const msg = input.value.trim();
+  if(!msg) return;
+  input.value = '';
+  const { error } = await sb.from('general_messages').insert({ author_id: currentProfile.id, message: msg });
+  if(error) showToast('ارسال ناموفق بود', true);
+}
+
+/* ================= New patient ================= */
+function nextFileNumber(){
+  const nums = patients.map(p => parseInt((p.file_number||'').replace(/[۰-۹]/g, d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)),10)).filter(n=>!isNaN(n));
+  const next = (nums.length?Math.max(...nums):0)+1;
+  return toPersianDigits(String(next).padStart(4,'0'));
+}
+function toggleAutoFile(){
+  const auto = document.getElementById('new-filenum-auto').checked;
+  const input = document.getElementById('new-filenum');
+  input.disabled = auto;
+  if(auto) input.value = nextFileNumber();
+}
+function openNewPatientModal(){
+  document.getElementById('modal-backdrop').classList.add('show');
+  ['new-name','new-age','new-phone','new-nationalid','new-insurance','new-job','new-referrer','new-address','new-history'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('new-filenum-auto').checked = true;
+  document.getElementById('new-filenum').value = nextFileNumber();
+  document.getElementById('new-filenum').disabled = true;
+  document.getElementById('err-name').classList.remove('show');
+  document.getElementById('err-age').classList.remove('show');
+}
+async function createPatient(){
+  const name = document.getElementById('new-name').value.trim();
+  const age = document.getElementById('new-age').value.trim();
+  let valid = true;
+  if(!name){ document.getElementById('err-name').classList.add('show'); valid=false; } else document.getElementById('err-name').classList.remove('show');
+  if(!age || isNaN(age) || Number(age)<=0 || Number(age)>120){ document.getElementById('err-age').classList.add('show'); valid=false; } else document.getElementById('err-age').classList.remove('show');
+  if(!valid) return;
+  const btn = document.getElementById('create-patient-btn');
+  btn.disabled = true; btn.textContent = 'در حال ثبت…';
+  const fileNum = document.getElementById('new-filenum').value.trim() || nextFileNumber();
+  const history = document.getElementById('new-history').value.trim();
+  const { data, error } = await sb.from('patients').insert({
+    file_number: fileNum, name, age: Number(age), gender: document.getElementById('new-gender').value,
+    national_id: document.getElementById('new-nationalid').value.trim(),
+    phone: document.getElementById('new-phone').value.trim(),
+    insurance: document.getElementById('new-insurance').value.trim(),
+    job: document.getElementById('new-job').value.trim(),
+    address: document.getElementById('new-address').value.trim(),
+    referrer: document.getElementById('new-referrer').value.trim(),
+    history: history || null, updated_by: currentProfile.id,
+  }).select().single();
+  btn.disabled = false; btn.textContent = 'ثبت پرونده';
+  if(error){ showToast('خطا در ثبت پرونده — شاید شماره‌ی پرونده تکراری است', true); return; }
+  if(history) await sb.from('visits').insert({ patient_id: data.id, note: 'مراجعه اولیه.', created_by: currentProfile.id });
+  closeModal('modal-backdrop');
+  await loadPatients();
+  renderList();
+  showToast('پرونده جدید ثبت شد');
+}
+
+/* ================= Stats ================= */
+function renderStats(){
+  const total = patients.length;
+  document.getElementById('stat-total').textContent = toPersianDigits(total);
+  const ages = patients.map(p=>p.age).filter(a=>a);
+  document.getElementById('stat-avgage').textContent = ages.length ? toPersianDigits(Math.round(ages.reduce((a,b)=>a+b,0)/ages.length)) : '—';
+  const totalVisits = patients.reduce((sum,p)=> sum + (p.visits?p.visits.length:0), 0);
+  document.getElementById('stat-visits').textContent = toPersianDigits(totalVisits);
+  const repeatCount = patients.filter(p => p.visits && p.visits.length > 1).length;
+  document.getElementById('stat-repeat').textContent = total ? toPersianDigits(Math.round(repeatCount/total*100)) + '٪' : '—';
+
+  const women = patients.filter(p=>p.gender==='خانم').length;
+  const men = patients.filter(p=>p.gender==='آقا').length;
+  const genderTotal = women+men || 1;
+  const womenPct = women/genderTotal*301;
+  document.getElementById('gender-donut').innerHTML = `
+    <circle cx="60" cy="60" r="48" fill="none" stroke="#EEF4F2" stroke-width="16"/>
+    <circle cx="60" cy="60" r="48" fill="none" stroke="#D4547E" stroke-width="16" stroke-dasharray="${womenPct} 301" transform="rotate(-90 60 60)" stroke-linecap="round"/>
+    <circle cx="60" cy="60" r="48" fill="none" stroke="#2E6E62" stroke-width="16" stroke-dasharray="${301-womenPct} 301" stroke-dashoffset="-${womenPct}" transform="rotate(-90 60 60)" stroke-linecap="round"/>`;
+  document.getElementById('gender-legend').innerHTML = `
+    <div class="legend-item"><span class="legend-dot" style="background:#D4547E"></span>خانم — ${toPersianDigits(women)} نفر (${genderTotal?Math.round(women/genderTotal*100):0}٪)</div>
+    <div class="legend-item"><span class="legend-dot" style="background:#2E6E62"></span>آقا — ${toPersianDigits(men)} نفر (${genderTotal?Math.round(men/genderTotal*100):0}٪)</div>`;
+
+  const buckets = [{label:'۰-۱۸',min:0,max:18},{label:'۱۹-۳۰',min:19,max:30},{label:'۳۱-۴۵',min:31,max:45},{label:'۴۶-۶۰',min:46,max:60},{label:'۶۰+',min:61,max:999}];
+  const counts = buckets.map(b => patients.filter(p=>p.age>=b.min && p.age<=b.max).length);
+  const maxCount = Math.max(...counts, 1);
+  document.getElementById('age-bars').innerHTML = buckets.map((b,i) => `
+    <div class="bar-col"><span style="font-size:11px;color:var(--ink-soft);font-weight:700;">${toPersianDigits(counts[i])}</span><div class="bar" style="height:${counts[i]/maxCount*100}%"></div><div class="bar-age-label">${b.label}</div></div>
+  `).join('');
+}
+
+/* ================= Reminders ================= */
+function openReminderModal(){
+  document.getElementById('reminder-title').value = '';
+  document.getElementById('reminder-date').value = '';
+  document.getElementById('err-reminder').classList.remove('show');
+  const sel = document.getElementById('reminder-patient');
+  sel.innerHTML = '<option value="">— بدون پرونده‌ی خاص —</option>' + patients.map(p=>`<option value="${p.id}">${p.name} (${p.file_number})</option>`).join('');
+  document.getElementById('reminder-modal-backdrop').classList.add('show');
+}
+async function createReminder(){
+  const title = document.getElementById('reminder-title').value.trim();
+  const date = document.getElementById('reminder-date').value;
+  if(!title || !date){ document.getElementById('err-reminder').classList.add('show'); return; }
+  document.getElementById('err-reminder').classList.remove('show');
+  const patientId = document.getElementById('reminder-patient').value || null;
+  const { error } = await sb.from('reminders').insert({ title, due_date: date, patient_id: patientId, created_by: currentProfile.id, assigned_to: currentProfile.id });
+  if(error){ showToast('خطا در ثبت یادآوری', true); return; }
+  closeModal('reminder-modal-backdrop');
+  showToast('یادآوری ثبت شد');
+}
+function renderReminders(){
+  const el = document.getElementById('reminder-list');
+  if(reminders.length===0){ el.innerHTML = '<div class="loading-state">یادآوری‌ای ثبت نشده.</div>'; return; }
+  const today = new Date().toISOString().slice(0,10);
+  el.innerHTML = reminders.map(r => {
+    const patient = patients.find(p=>p.id===r.patient_id);
+    const overdue = !r.done && r.due_date <= today;
+    return `<div class="reminder-item">
+      <div class="reminder-check ${r.done?'done':''}" onclick="toggleReminder('${r.id}', ${!r.done})">${r.done?'✓':''}</div>
+      <div style="flex:1;">
+        <div class="reminder-title ${r.done?'done':''}">${r.title}${patient?` — ${patient.name}`:''}</div>
+        <div class="reminder-due ${overdue?'overdue':''}">${new Date(r.due_date).toLocaleDateString('fa-IR')}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+async function toggleReminder(id, done){
+  await sb.from('reminders').update({ done }).eq('id', id);
+}
+
+/* ================= Init ================= */
+checkSession();
+</script>
+</body>
+</html>
