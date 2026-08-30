@@ -79,6 +79,21 @@
   .bell-btn.ring svg{ animation: bellShake .5s ease; }
   .bell-dot{ position:absolute; top:6px; left:6px; width:8px; height:8px; border-radius:50%; background:var(--danger); display:none; }
   .bell-dot.show{ display:block; }
+  .bell-wrap{ position:relative; }
+  .notif-panel{ position:absolute; top:46px; left:0; width:340px; max-width:90vw; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-md); box-shadow:0 12px 32px rgba(38,51,46,0.15); z-index:95; display:none; max-height:420px; overflow-y:auto; }
+  .notif-panel.show{ display:block; animation: fadeUp .2s var(--ease); }
+  .notif-panel-head{ padding:12px 16px; font-size:13px; font-weight:700; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; }
+  .notif-mark-all{ font-size:11.5px; color:var(--accent); cursor:pointer; font-weight:600; }
+  .notif-item{ display:flex; gap:10px; padding:12px 16px; border-bottom:1px solid var(--line); cursor:pointer; transition:background .12s; }
+  .notif-item:last-child{ border-bottom:none; }
+  .notif-item:hover{ background:var(--surface-2); }
+  .notif-item.unread{ background: var(--accent-soft); }
+  .notif-icon{ width:30px;height:30px;border-radius:50%; background:var(--surface-2); display:flex;align-items:center;justify-content:center; flex-shrink:0; color:var(--accent-dark); }
+  .notif-icon svg{ width:15px;height:15px; }
+  .notif-text{ font-size:13px; line-height:1.5; }
+  .notif-text b{ font-weight:700; }
+  .notif-time{ font-size:11px; color:var(--ink-faint); margin-top:2px; }
+  .notif-empty{ padding:30px 16px; text-align:center; font-size:13px; color:var(--ink-faint); }
 
   .btn{ display:inline-flex; align-items:center; gap:7px; padding: 10px 17px; border-radius: var(--radius-sm); font-size:14px; font-weight:600; border:1px solid var(--line); background: var(--surface); color: var(--ink); cursor:pointer; transition: all .15s var(--ease); white-space:nowrap; }
   .btn:hover{ border-color: var(--ink-faint); transform: translateY(-1px); }
@@ -317,10 +332,16 @@
             <select class="sort-select" id="sort-select" onchange="renderList()">
               <option value="recent">جدیدترین ویزیت</option><option value="name">نام (الفبا)</option><option value="age">سن</option><option value="file">شماره پرونده</option>
             </select>
-            <button class="bell-btn" id="bell-btn" onclick="navigate('chat')">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg>
-              <span class="bell-dot" id="bell-dot"></span>
-            </button>
+            <div class="bell-wrap">
+              <button class="bell-btn" id="bell-btn" onclick="toggleNotifPanel()">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+                <span class="bell-dot" id="bell-dot"></span>
+              </button>
+              <div class="notif-panel" id="notif-panel">
+                <div class="notif-panel-head"><span>اعلان‌ها</span><span class="notif-mark-all" onclick="markAllNotifsRead()">علامت‌گذاری همه به‌عنوان خوانده‌شده</span></div>
+                <div id="notif-list"></div>
+              </div>
+            </div>
             <button class="btn btn-primary" onclick="openNewPatientModal()">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
               بیمار جدید
@@ -365,7 +386,7 @@
               <textarea id="field-nutrition" rows="3"></textarea>
               <div class="sidenote"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>این بخش برای متخصص تغذیه هم قابل مشاهده و ویرایش است.</div>
             </div>
-            <div class="action-row"><button class="btn btn-primary" id="save-btn" onclick="saveRecord()">ذخیره تغییرات</button><button class="btn" onclick="addVisit()">ثبت ویزیت جدید</button></div>
+            <div class="action-row"><button class="btn btn-primary" id="save-btn" onclick="saveRecord()">ذخیره تغییرات</button><button class="btn" onclick="addVisit()">ثبت ویزیت جدید</button><button class="btn" style="color:var(--danger); border-color:var(--danger-soft);" onclick="confirmDeletePatient()">حذف پرونده</button></div>
           </div>
           <div>
             <div class="panel"><div class="panel-title">تاریخچه ویزیت‌ها</div><div class="visit-timeline" id="visit-timeline"></div></div>
@@ -499,6 +520,7 @@ let profilesById = {};
 let activePatientId = null;
 let generalMessages = [];
 let reminders = [];
+let notifications = [];
 let lastSeenGeneralAt = localStorage.getItem('lastSeenGeneralAt') || null; // ok to use localStorage here, it's just a UI marker, not app data storage in the "no browser storage in artifacts" sense — this is a static served file, not a Claude artifact.
 
 /* ================= Utilities ================= */
@@ -619,7 +641,7 @@ async function loadProfileAndEnter(){
   if(profile.role === 'doctor') document.getElementById('nav-invites').style.display = 'flex';
   document.getElementById('view-login').style.display = 'none';
   document.getElementById('view-app').style.display = 'block';
-  await Promise.all([loadPatients(), loadAllProfiles(), loadGeneralMessages(), loadReminders()]);
+  await Promise.all([loadPatients(), loadAllProfiles(), loadGeneralMessages(), loadReminders(), loadNotifications()]);
   subscribeRealtime();
   renderList();
 }
@@ -664,20 +686,37 @@ async function loadReminders(){
   updateReminderBadge();
 }
 
+async function loadNotifications(){
+  const { data } = await sb.from('notifications').select('*').eq('recipient_id', currentProfile.id).order('created_at', {ascending:false}).limit(50);
+  notifications = data || [];
+  updateBellBadge();
+}
+
+/* Write a notification for "the other person(s)" — in this two-role clinic, that's everyone except the actor */
+async function notifyOthers(type, patient, messagePreview){
+  const others = Object.values(profilesById).filter(p => p.id !== currentProfile.id);
+  if(others.length === 0) return;
+  const rows = others.map(p => ({
+    recipient_id: p.id,
+    actor_id: currentProfile.id,
+    type,
+    patient_id: patient ? patient.id : null,
+    patient_name: patient ? patient.name : null,
+    message_preview: messagePreview || null,
+  }));
+  await sb.from('notifications').insert(rows);
+}
+
 /* ================= Realtime subscriptions ================= */
 function subscribeRealtime(){
   sb.channel('patients-changes')
     .on('postgres_changes', {event:'*', schema:'public', table:'patients'}, payload => {
       loadPatients().then(() => { renderList(); if(activePatientId) refreshDetailIfOpen(); });
-      if(payload.eventType === 'UPDATE' && payload.new.updated_by !== currentProfile.id){
-        showToast('همکار شما یک پرونده را به‌روزرسانی کرد');
-      }
     }).subscribe();
 
   sb.channel('comments-changes')
     .on('postgres_changes', {event:'INSERT', schema:'public', table:'patient_comments'}, payload => {
       if(activePatientId === payload.new.patient_id) loadComments(activePatientId);
-      if(payload.new.author_id !== currentProfile.id) showToast('یادداشت جدیدی روی یک پرونده ثبت شد');
     }).subscribe();
 
   sb.channel('general-changes')
@@ -685,26 +724,36 @@ function subscribeRealtime(){
       generalMessages.push(payload.new);
       updateChatBadge();
       if(document.getElementById('view-chat').style.display !== 'none') renderGeneralThread();
-      if(payload.new.author_id !== currentProfile.id) { ringBell(); showToast('پیام جدید در گفتگوی کلی'); }
     }).subscribe();
 
   sb.channel('reminders-changes')
     .on('postgres_changes', {event:'*', schema:'public', table:'reminders'}, () => {
       loadReminders().then(() => { if(document.getElementById('view-reminders').style.display !== 'none') renderReminders(); });
     }).subscribe();
+
+  sb.channel('notifications-changes')
+    .on('postgres_changes', {event:'INSERT', schema:'public', table:'notifications', filter: `recipient_id=eq.${currentProfile.id}`}, payload => {
+      notifications.unshift(payload.new);
+      updateBellBadge();
+      ringBell();
+      renderNotifList();
+    }).subscribe();
 }
 
 function ringBell(){
   const bell = document.getElementById('bell-btn');
   bell.classList.add('ring');
-  document.getElementById('bell-dot').classList.add('show');
   setTimeout(()=> bell.classList.remove('ring'), 500);
+}
+function updateBellBadge(){
+  const unread = notifications.filter(n => !n.read_at).length;
+  document.getElementById('bell-dot').classList.toggle('show', unread > 0);
 }
 function updateChatBadge(){
   const unread = lastSeenGeneralAt ? generalMessages.filter(m => new Date(m.created_at) > new Date(lastSeenGeneralAt) && m.author_id !== (currentProfile && currentProfile.id)).length : generalMessages.length;
   const badge = document.getElementById('chat-badge');
-  if(unread > 0){ badge.style.display='inline-block'; badge.textContent = toPersianDigits(unread); document.getElementById('bell-dot').classList.add('show'); }
-  else { badge.style.display='none'; document.getElementById('bell-dot').classList.remove('show'); }
+  if(unread > 0){ badge.style.display='inline-block'; badge.textContent = toPersianDigits(unread); }
+  else { badge.style.display='none'; }
 }
 function updateReminderBadge(){
   const today = new Date().toISOString().slice(0,10);
@@ -821,6 +870,8 @@ async function saveRecord(){
   if(error){ showToast('خطا در ذخیره‌سازی', true); return; }
   showToast('تغییرات ذخیره شد');
   await loadPatients();
+  const p = patients.find(x => x.id === activePatientId);
+  notifyOthers('patient_update', p);
 }
 
 async function addVisit(){
@@ -830,8 +881,25 @@ async function addVisit(){
   if(error){ showToast('خطا در ثبت ویزیت', true); return; }
   await sb.from('patients').update({ updated_at: new Date().toISOString(), updated_by: currentProfile.id }).eq('id', activePatientId);
   await loadPatients();
+  const p = patients.find(x => x.id === activePatientId);
+  notifyOthers('patient_update', p, note.trim());
   openPatient(activePatientId);
   showToast('ویزیت جدید ثبت شد');
+}
+
+function confirmDeletePatient(){
+  const p = patients.find(x => x.id === activePatientId);
+  if(!p) return;
+  const ok = confirm(`آیا مطمئنید می‌خواهید پرونده‌ی «${p.name}» را برای همیشه حذف کنید؟ این کار قابل بازگشت نیست.`);
+  if(ok) deletePatient();
+}
+async function deletePatient(){
+  const { error } = await sb.from('patients').delete().eq('id', activePatientId);
+  if(error){ showToast('خطا در حذف پرونده', true); return; }
+  showToast('پرونده حذف شد');
+  await loadPatients();
+  navigate('list');
+  renderList();
 }
 
 /* ---- Per-patient comments ---- */
@@ -855,8 +923,10 @@ async function sendComment(){
   if(!msg || !activePatientId) return;
   input.value = '';
   const { error } = await sb.from('patient_comments').insert({ patient_id: activePatientId, author_id: currentProfile.id, message: msg });
-  if(error) showToast('ارسال ناموفق بود', true);
-  else loadComments(activePatientId);
+  if(error){ showToast('ارسال ناموفق بود', true); return; }
+  loadComments(activePatientId);
+  const p = patients.find(x => x.id === activePatientId);
+  notifyOthers('patient_comment', p, msg);
 }
 
 /* ---- General chat ---- */
@@ -876,7 +946,8 @@ async function sendGeneralMessage(){
   if(!msg) return;
   input.value = '';
   const { error } = await sb.from('general_messages').insert({ author_id: currentProfile.id, message: msg });
-  if(error) showToast('ارسال ناموفق بود', true);
+  if(error){ showToast('ارسال ناموفق بود', true); return; }
+  notifyOthers('general_message', null, msg);
 }
 
 /* ================= New patient ================= */
@@ -1029,6 +1100,63 @@ async function renderInviteList(){
     const status = inv.used_by ? `<span style="color:var(--ink-faint);">استفاده‌شده</span>` : `<span style="color:var(--accent);">فعال</span>`;
     return `<div class="reminder-item"><div style="flex:1;"><div class="reminder-title" style="user-select:all;">${inv.code}</div><div class="reminder-due">نقش: ${roleLabel}</div></div>${status}</div>`;
   }).join('');
+}
+
+/* ================= Notification panel ================= */
+function toggleNotifPanel(){
+  const panel = document.getElementById('notif-panel');
+  const willShow = !panel.classList.contains('show');
+  panel.classList.toggle('show', willShow);
+  if(willShow) renderNotifList();
+}
+document.addEventListener('click', (e) => {
+  const panel = document.getElementById('notif-panel');
+  const wrap = document.querySelector('.bell-wrap');
+  if(panel && wrap && !wrap.contains(e.target)) panel.classList.remove('show');
+});
+
+const notifIcons = {
+  patient_update: '<path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>',
+  patient_comment: '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>',
+  general_message: '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>',
+  reminder_due: '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/>',
+};
+function notifText(n){
+  const actor = profilesById[n.actor_id];
+  const actorName = actor ? actor.full_name : 'همکار شما';
+  if(n.type === 'patient_update') return `<b>${actorName}</b> پرونده‌ی <b>${n.patient_name || 'یک بیمار'}</b> را به‌روزرسانی کرد`;
+  if(n.type === 'patient_comment') return `<b>${actorName}</b> یادداشتی روی پرونده‌ی <b>${n.patient_name || 'یک بیمار'}</b> نوشت`;
+  if(n.type === 'general_message') return `<b>${actorName}</b> در گفتگوی کلی پیام داد`;
+  return `${actorName}`;
+}
+function renderNotifList(){
+  const el = document.getElementById('notif-list');
+  if(notifications.length === 0){ el.innerHTML = '<div class="notif-empty">اعلانی وجود ندارد.</div>'; return; }
+  el.innerHTML = notifications.map(n => `
+    <div class="notif-item ${n.read_at?'':'unread'}" onclick="handleNotifClick('${n.id}', '${n.type}', ${n.patient_id ? `'${n.patient_id}'` : 'null'})">
+      <div class="notif-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${notifIcons[n.type]||''}</svg></div>
+      <div><div class="notif-text">${notifText(n)}</div><div class="notif-time">${fmtTime(n.created_at)}</div></div>
+    </div>`).join('');
+}
+async function handleNotifClick(id, type, patientId){
+  const n = notifications.find(x => x.id === id);
+  if(n && !n.read_at){ n.read_at = new Date().toISOString(); sb.from('notifications').update({read_at: n.read_at}).eq('id', id); updateBellBadge(); }
+  document.getElementById('notif-panel').classList.remove('show');
+  if((type === 'patient_update' || type === 'patient_comment') && patientId){
+    if(!patients.find(p=>p.id===patientId)){ await loadPatients(); }
+    openPatient(patientId);
+  } else if(type === 'general_message'){
+    navigate('chat');
+  }
+}
+async function markAllNotifsRead(){
+  const unreadIds = notifications.filter(n=>!n.read_at).map(n=>n.id);
+  if(unreadIds.length === 0) return;
+  const now = new Date().toISOString();
+  notifications.forEach(n => { if(!n.read_at) n.read_at = now; });
+  updateBellBadge();
+  renderNotifList();
+  await sb.from('notifications').update({read_at: now}).in('id', unreadIds);
 }
 
 /* ================= Init ================= */
