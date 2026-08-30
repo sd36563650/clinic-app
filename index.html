@@ -167,6 +167,14 @@
   .visit-entry:first-child{ padding-top:0; }
   .visit-head{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px; flex-wrap:wrap; gap:4px 10px; }
   .visit-author{ font-size:12px; font-weight:700; color:var(--accent-dark); }
+  .entry-actions{ display:flex; gap:4px; margin-right:auto; }
+  .entry-action-btn{ background:none; border:none; cursor:pointer; color:var(--ink-faint); padding:2px; display:flex; align-items:center; border-radius:4px; }
+  .entry-action-btn:hover{ color:var(--accent-dark); background:var(--surface-2); }
+  .entry-action-btn.danger:hover{ color:var(--danger); background:var(--danger-soft); }
+  .entry-action-btn svg{ width:13px; height:13px; }
+  .entry-edited-tag{ font-size:10.5px; color:var(--ink-faint); font-style:italic; }
+  .entry-edit-row{ display:flex; gap:6px; margin-top:6px; }
+  .entry-edit-row input{ flex:1; }
   .load-more-btn{ display:block; width:100%; text-align:center; padding:10px; margin-top:8px; font-size:12.5px; font-weight:600; color:var(--accent); background:var(--surface-2); border:none; border-radius:var(--radius-sm); cursor:pointer; }
   .load-more-btn:hover{ background:var(--accent-soft); }
   .status-dot.dot-updated{ position:relative; }
@@ -185,6 +193,7 @@
   .comment-input-row input{ flex:1; }
 
   .action-row{ display:flex; gap:9px; margin-top:18px; }
+  .action-row input{ flex:1; min-width:0; }
   .sidenote{ display:flex; gap:9px; align-items:flex-start; font-size:12.5px; color:var(--ink-faint); background: var(--surface-2); padding: 11px 13px; border-radius: var(--radius-sm); margin-top:16px; line-height:1.7; }
   .sidenote svg{ width:14px;height:14px; flex-shrink:0; margin-top:2px; }
 
@@ -402,25 +411,44 @@
                 <div class="field-group" style="grid-column:1/-1;"><div class="field-label">آدرس</div><input class="field-input" id="field-address"></div>
                 <div class="field-group" style="grid-column:1/-1;"><div class="field-label">ارجاع‌دهنده</div><input class="field-input" id="field-referrer"></div>
               </div>
+              <button class="btn btn-primary btn-sm" style="margin-top:14px;" onclick="saveRecord()">ذخیره اطلاعات تماس</button>
             </div>
-            <div class="panel"><div class="panel-title">شرح حال</div><textarea id="field-history" rows="4"></textarea></div>
+            <div class="panel">
+              <div class="panel-title">شرح حال</div>
+              <div class="visit-timeline" id="log-history"></div>
+              <div class="action-row" style="margin-top:14px;">
+                <input class="field-input" id="input-history" placeholder="مورد جدید به شرح حال اضافه کن…" onkeydown="if(event.key==='Enter') addRecordEntry('history')">
+                <button class="btn btn-primary" style="white-space:nowrap;" onclick="addRecordEntry('history')">ثبت</button>
+              </div>
+            </div>
             <div class="panel">
               <div class="panel-title"><span>تشخیص و درمان</span><span class="lock-badge" id="dx-lock-badge" style="display:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>فقط دکتر</span></div>
-              <textarea id="field-diagnosis" rows="3"></textarea>
+              <div class="visit-timeline" id="log-diagnosis"></div>
+              <div class="action-row" style="margin-top:14px;" id="diagnosis-input-row">
+                <input class="field-input" id="input-diagnosis" placeholder="مورد جدید به تشخیص و درمان اضافه کن…" onkeydown="if(event.key==='Enter') addRecordEntry('diagnosis')">
+                <button class="btn btn-primary" style="white-space:nowrap;" onclick="addRecordEntry('diagnosis')">ثبت</button>
+              </div>
             </div>
             <div class="panel">
               <div class="panel-title">یادداشت تغذیه</div>
-              <textarea id="field-nutrition" rows="3"></textarea>
+              <div class="visit-timeline" id="log-nutrition"></div>
+              <div class="action-row" style="margin-top:14px;">
+                <input class="field-input" id="input-nutrition" placeholder="مورد جدید به یادداشت تغذیه اضافه کن…" onkeydown="if(event.key==='Enter') addRecordEntry('nutrition')">
+                <button class="btn btn-primary" style="white-space:nowrap;" onclick="addRecordEntry('nutrition')">ثبت</button>
+              </div>
               <div class="sidenote"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>این بخش برای متخصص تغذیه هم قابل مشاهده و ویرایش است.</div>
             </div>
-            <div class="action-row"><button class="btn btn-primary" id="save-btn" onclick="saveRecord()">ذخیره تغییرات</button><button class="btn" onclick="addVisit()">ثبت ویزیت جدید</button><button class="btn" style="color:var(--danger); border-color:var(--danger-soft);" onclick="confirmDeletePatient()">حذف پرونده</button></div>
+            <div class="action-row"><button class="btn" onclick="addVisit()">ثبت ویزیت جدید</button><button class="btn" style="color:var(--danger); border-color:var(--danger-soft);" onclick="confirmDeletePatient()">حذف پرونده</button></div>
           </div>
           <div>
             <div class="panel"><div class="panel-title">تاریخچه ویزیت‌ها</div><div class="visit-timeline" id="visit-timeline"></div></div>
             <div class="panel">
-              <div class="panel-title">گفتگو درباره‌ی این پرونده</div>
-              <div class="comment-thread" id="comment-thread"></div>
-              <div class="comment-input-row"><input class="field-input" id="comment-input" placeholder="یادداشتی برای همکار بنویس…" onkeydown="if(event.key==='Enter') sendComment()"><button class="btn btn-primary btn-sm" onclick="sendComment()">ارسال</button></div>
+              <div class="panel-title">یادداشت‌های پرونده <span class="optional-tag">بین دکتر و متخصص تغذیه</span></div>
+              <div class="visit-timeline" id="comment-thread"></div>
+              <div class="action-row" style="margin-top:14px;">
+                <input class="field-input" id="comment-input" placeholder="یادداشت جدید برای این پرونده…" onkeydown="if(event.key==='Enter') sendComment()">
+                <button class="btn btn-primary" style="white-space:nowrap;" onclick="sendComment()">ثبت یادداشت</button>
+              </div>
             </div>
           </div>
         </div>
@@ -556,6 +584,9 @@ let profilesById = {};
 let activePatientId = null;
 let visitsShownCount = 8;
 let commentsShownCount = 15;
+let historyShownCount = 15;
+let diagnosisShownCount = 15;
+let nutritionShownCount = 15;
 let generalMessages = [];
 let reminders = [];
 let notifications = [];
@@ -757,6 +788,12 @@ function subscribeRealtime(){
       if(activePatientId === payload.new.patient_id) loadComments(activePatientId);
     }).subscribe();
 
+  sb.channel('records-changes')
+    .on('postgres_changes', {event:'*', schema:'public', table:'patient_records'}, payload => {
+      const pid = (payload.new && payload.new.patient_id) || (payload.old && payload.old.patient_id);
+      if(activePatientId === pid) loadPatientRecords(activePatientId);
+    }).subscribe();
+
   sb.channel('general-changes')
     .on('postgres_changes', {event:'INSERT', schema:'public', table:'general_messages'}, payload => {
       generalMessages.push(payload.new);
@@ -824,10 +861,10 @@ function goHome(){ navigate('list'); }
 function toggleSidebar(open){ document.getElementById('sidebar').classList.toggle('open', open); document.getElementById('overlay').classList.toggle('show', open); }
 
 function applyAccessControl(){
-  const dxField = document.getElementById('field-diagnosis');
+  const dxInputRow = document.getElementById('diagnosis-input-row');
   const dxBadge = document.getElementById('dx-lock-badge');
-  if(currentProfile.role === 'nutrition'){ dxField.disabled = true; dxBadge.style.display = 'inline-flex'; }
-  else { dxField.disabled = false; dxBadge.style.display = 'none'; }
+  if(currentProfile.role === 'nutrition'){ dxInputRow.style.display = 'none'; dxBadge.style.display = 'inline-flex'; }
+  else { dxInputRow.style.display = 'flex'; dxBadge.style.display = 'none'; }
 }
 
 /* ================= Patient list ================= */
@@ -882,15 +919,14 @@ async function openPatient(id){
   document.getElementById('field-job').value = p.job || '';
   document.getElementById('field-address').value = p.address || '';
   document.getElementById('field-referrer').value = p.referrer || '';
-  document.getElementById('field-history').value = p.history || '';
-  document.getElementById('field-diagnosis').value = p.diagnosis || '';
-  document.getElementById('field-nutrition').value = p.nutrition_notes || '';
   visitsShownCount = 8;
   commentsShownCount = 15;
+  historyShownCount = 15; diagnosisShownCount = 15; nutritionShownCount = 15;
   renderVisitTimeline(p);
   applyAccessControl();
   navigate('detail');
   loadComments(id);
+  loadPatientRecords(id);
 }
 
 function renderVisitTimeline(p){
@@ -916,8 +952,6 @@ function loadMoreVisits(){
 function refreshDetailIfOpen(){ if(document.getElementById('view-detail').style.display !== 'none') openPatient(activePatientId); }
 
 async function saveRecord(){
-  const btn = document.getElementById('save-btn');
-  btn.disabled = true; btn.textContent = 'در حال ذخیره…';
   const payload = {
     national_id: document.getElementById('field-nationalid').value,
     phone: document.getElementById('field-phone').value,
@@ -925,19 +959,11 @@ async function saveRecord(){
     job: document.getElementById('field-job').value,
     address: document.getElementById('field-address').value,
     referrer: document.getElementById('field-referrer').value,
-    history: document.getElementById('field-history').value,
-    nutrition_notes: document.getElementById('field-nutrition').value,
-    updated_at: new Date().toISOString(),
-    updated_by: currentProfile.id,
   };
-  if(currentProfile.role === 'doctor') payload.diagnosis = document.getElementById('field-diagnosis').value;
   const { error } = await sb.from('patients').update(payload).eq('id', activePatientId);
-  btn.disabled = false; btn.textContent = 'ذخیره تغییرات';
   if(error){ showToast('خطا در ذخیره‌سازی', true); return; }
-  showToast('تغییرات ذخیره شد');
+  showToast('اطلاعات تماس ذخیره شد');
   await loadPatients();
-  const p = patients.find(x => x.id === activePatientId);
-  notifyOthers('patient_update', p);
 }
 
 async function addVisit(){
@@ -968,29 +994,26 @@ async function deletePatient(){
   renderList();
 }
 
-/* ---- Per-patient comments ---- */
+/* ---- Per-patient notes (comments) ---- */
 let allCommentsCache = [];
 async function loadComments(patientId){
-  const { data } = await sb.from('patient_comments').select('*').eq('patient_id', patientId).order('created_at', {ascending:true});
+  const { data } = await sb.from('patient_comments').select('*').eq('patient_id', patientId).order('created_at', {ascending:false});
   allCommentsCache = data || [];
   renderCommentThread();
 }
 function renderCommentThread(){
   const el = document.getElementById('comment-thread');
-  if(allCommentsCache.length === 0){ el.innerHTML = '<div class="loading-state" style="padding:16px 0;">هنوز یادداشتی ثبت نشده.</div>'; return; }
+  if(allCommentsCache.length === 0){ el.innerHTML = '<div class="visit-entry"><div class="visit-note" style="color:var(--ink-faint)">هنوز یادداشتی ثبت نشده.</div></div>'; return; }
   const total = allCommentsCache.length;
-  const visible = total > commentsShownCount ? allCommentsCache.slice(total - commentsShownCount) : allCommentsCache;
-  let html = '';
+  const visible = allCommentsCache.slice(0, commentsShownCount);
+  let html = visible.map(c => {
+    const author = profilesById[c.author_id];
+    return `<div class="visit-entry"><div class="visit-head"><span class="visit-date">${fmtTime(c.created_at)}</span><span class="visit-author">${author ? author.full_name : 'نامشخص'}</span></div><div class="visit-note">${c.message}</div></div>`;
+  }).join('');
   if(total > commentsShownCount){
     html += `<button class="load-more-btn" onclick="loadMoreComments()">نمایش ${toPersianDigits(Math.min(15, total - commentsShownCount))} یادداشت قدیمی‌تر دیگر (از ${toPersianDigits(total)} یادداشت)</button>`;
   }
-  html += visible.map(c => {
-    const author = profilesById[c.author_id];
-    const isMe = c.author_id === currentProfile.id;
-    return `<div class="comment-item"><div class="comment-head"><span class="comment-author ${isMe?'me':''}">${author?author.full_name:'—'}</span><span class="comment-time">${fmtTime(c.created_at)}</span></div><div class="comment-text">${c.message}</div></div>`;
-  }).join('');
   el.innerHTML = html;
-  el.scrollTop = el.scrollHeight;
 }
 function loadMoreComments(){
   commentsShownCount += 15;
@@ -1006,6 +1029,107 @@ async function sendComment(){
   loadComments(activePatientId);
   const p = patients.find(x => x.id === activePatientId);
   notifyOthers('patient_comment', p, msg);
+}
+
+/* ---- Patient records log (history / diagnosis / nutrition) ---- */
+let patientRecordsCache = { history: [], diagnosis: [], nutrition: [] };
+const recordTypeLabels = { history: 'شرح حال', diagnosis: 'تشخیص و درمان', nutrition: 'یادداشت تغذیه' };
+const recordShownCounters = { history: 'historyShownCount', diagnosis: 'diagnosisShownCount', nutrition: 'nutritionShownCount' };
+
+async function loadPatientRecords(patientId){
+  const { data } = await sb.from('patient_records').select('*').eq('patient_id', patientId).order('created_at', {ascending:false});
+  const all = data || [];
+  patientRecordsCache = {
+    history: all.filter(r => r.record_type === 'history'),
+    diagnosis: all.filter(r => r.record_type === 'diagnosis'),
+    nutrition: all.filter(r => r.record_type === 'nutrition'),
+  };
+  renderRecordLog('history');
+  renderRecordLog('diagnosis');
+  renderRecordLog('nutrition');
+}
+
+function renderRecordLog(type){
+  const el = document.getElementById('log-' + type);
+  const list = patientRecordsCache[type] || [];
+  const shownCount = window[recordShownCounters[type]];
+  if(list.length === 0){ el.innerHTML = `<div class="visit-entry"><div class="visit-note" style="color:var(--ink-faint)">هنوز موردی برای ${recordTypeLabels[type]} ثبت نشده.</div></div>`; return; }
+  const visible = list.slice(0, shownCount);
+  let html = visible.map(r => {
+    const author = profilesById[r.author_id];
+    const editor = r.edited_by ? profilesById[r.edited_by] : null;
+    const isEditing = r._editing;
+    if(isEditing){
+      return `<div class="visit-entry" id="record-${r.id}">
+        <div class="visit-head"><span class="visit-date">${fmtTime(r.created_at)}</span><span class="visit-author">${author ? author.full_name : 'نامشخص'}</span></div>
+        <div class="entry-edit-row"><input class="field-input" id="edit-input-${r.id}" value="${r.content.replace(/"/g,'&quot;')}" onkeydown="if(event.key==='Enter') saveEditedRecord('${type}','${r.id}')"><button class="btn btn-primary btn-sm" onclick="saveEditedRecord('${type}','${r.id}')">ذخیره</button><button class="btn btn-sm" onclick="cancelEditRecord('${type}','${r.id}')">انصراف</button></div>
+      </div>`;
+    }
+    return `<div class="visit-entry" id="record-${r.id}">
+      <div class="visit-head">
+        <span class="visit-date">${fmtTime(r.created_at)}</span>
+        <span class="visit-author">${author ? author.full_name : 'نامشخص'}</span>
+        <div class="entry-actions">
+          <button class="entry-action-btn" title="ویرایش" onclick="startEditRecord('${type}','${r.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button>
+          <button class="entry-action-btn danger" title="حذف" onclick="deleteRecordEntry('${type}','${r.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg></button>
+        </div>
+      </div>
+      <div class="visit-note">${r.content}</div>
+      ${r.updated_at ? `<div class="entry-edited-tag">ویرایش‌شده${editor ? ' توسط ' + editor.full_name : ''} — ${fmtTime(r.updated_at)}</div>` : ''}
+    </div>`;
+  }).join('');
+  if(list.length > shownCount){
+    html += `<button class="load-more-btn" onclick="loadMoreRecords('${type}')">نمایش ${toPersianDigits(Math.min(15, list.length - shownCount))} مورد قدیمی‌تر دیگر (از ${toPersianDigits(list.length)} مورد)</button>`;
+  }
+  el.innerHTML = html;
+}
+
+function loadMoreRecords(type){
+  window[recordShownCounters[type]] += 15;
+  renderRecordLog(type);
+}
+
+async function addRecordEntry(type){
+  const input = document.getElementById('input-' + type);
+  const content = input.value.trim();
+  if(!content || !activePatientId) return;
+  input.value = '';
+  const { error } = await sb.from('patient_records').insert({ patient_id: activePatientId, record_type: type, content, author_id: currentProfile.id });
+  if(error){ showToast('خطا در ثبت', true); return; }
+  await loadPatientRecords(activePatientId);
+  await sb.from('patients').update({ updated_at: new Date().toISOString(), updated_by: currentProfile.id }).eq('id', activePatientId);
+  await loadPatients();
+  const p = patients.find(x => x.id === activePatientId);
+  notifyOthers('patient_update', p, content);
+  showToast(`${recordTypeLabels[type]} ثبت شد`);
+}
+
+function startEditRecord(type, id){
+  const r = patientRecordsCache[type].find(x => x.id === id);
+  if(r) r._editing = true;
+  renderRecordLog(type);
+}
+function cancelEditRecord(type, id){
+  const r = patientRecordsCache[type].find(x => x.id === id);
+  if(r) r._editing = false;
+  renderRecordLog(type);
+}
+async function saveEditedRecord(type, id){
+  const input = document.getElementById('edit-input-' + id);
+  const content = input.value.trim();
+  if(!content) return;
+  const { error } = await sb.from('patient_records').update({ content, updated_at: new Date().toISOString(), edited_by: currentProfile.id }).eq('id', id);
+  if(error){ showToast('خطا در ویرایش', true); return; }
+  await loadPatientRecords(activePatientId);
+  showToast('ویرایش ثبت شد');
+}
+async function deleteRecordEntry(type, id){
+  const ok = confirm(`این مورد از «${recordTypeLabels[type]}» برای همیشه حذف شود؟`);
+  if(!ok) return;
+  const { error } = await sb.from('patient_records').delete().eq('id', id);
+  if(error){ showToast('خطا در حذف', true); return; }
+  await loadPatientRecords(activePatientId);
+  showToast('مورد حذف شد');
 }
 
 /* ---- General chat ---- */
