@@ -16,10 +16,21 @@
     --pink: #D4547E; --radius-sm: 8px; --radius-md: 14px; --radius-lg: 20px;
     --ease: cubic-bezier(.22,1,.36,1);
   }
+  html[data-theme="dark"]{
+    --bg: #14201C; --surface: #1B2A25; --surface-2: #22342D;
+    --ink: #E7EFEC; --ink-soft: #A9BCB5; --ink-faint: #6E837B; --line: #2E4038;
+    --accent: #4FAE97; --accent-soft: #24413A; --accent-dark: #7FCBB6; --accent-glow: rgba(79,174,151,0.22);
+    --danger: #E08876; --danger-soft: #3A2622; --warn: #E0B564; --warn-soft: #3A2F1C;
+    --pink: #E288A4;
+  }
+  html, body{ transition: background-color .25s ease, color .25s ease; }
+  *{ transition-property: background-color, border-color, color, box-shadow; transition-duration: .2s; transition-timing-function: ease; }
   *{box-sizing:border-box; margin:0; padding:0;}
   html,body{height:100%;}
   body{ font-family:'Vazirmatn', Tahoma, sans-serif; background: var(--bg); color: var(--ink); -webkit-font-smoothing: antialiased; line-height:1.6; }
   button, input, textarea, select{ font-family: inherit; }
+  .theme-toggle-btn{ display:flex; align-items:center; gap:8px; width:100%; font-size:12.5px; font-weight:600; color:var(--ink-soft); background:var(--surface-2); border:none; border-radius:8px; padding:9px 11px; cursor:pointer; margin-top:8px; }
+  .theme-toggle-btn:hover{ background:var(--accent-soft); color:var(--accent-dark); }
 
   @keyframes fadeUp{ from{ opacity:0; transform: translateY(10px);} to{ opacity:1; transform:translateY(0);} }
   @keyframes popIn{ from{ opacity:0; transform: scale(.94);} to{ opacity:1; transform:scale(1);} }
@@ -154,6 +165,12 @@
   .visit-entry{ padding: 13px 0; border-bottom: 1px solid var(--line); }
   .visit-entry:last-child{ border-bottom:none; }
   .visit-entry:first-child{ padding-top:0; }
+  .visit-head{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px; flex-wrap:wrap; gap:4px 10px; }
+  .visit-author{ font-size:12px; font-weight:700; color:var(--accent-dark); }
+  .load-more-btn{ display:block; width:100%; text-align:center; padding:10px; margin-top:8px; font-size:12.5px; font-weight:600; color:var(--accent); background:var(--surface-2); border:none; border-radius:var(--radius-sm); cursor:pointer; }
+  .load-more-btn:hover{ background:var(--accent-soft); }
+  .status-dot.dot-updated{ position:relative; }
+  .status-dot.dot-updated::after{ content:''; position:absolute; inset:-3px; border-radius:50%; border:1.5px solid var(--danger); animation: ping 1.6s ease-in-out infinite; }
   .visit-date{ font-size:12px; color:var(--ink-faint); font-weight:700; margin-bottom:4px; }
   .visit-note{ font-size:13.5px; }
 
@@ -286,7 +303,7 @@
 <div class="sidebar-overlay" id="overlay" onclick="toggleSidebar(false)"></div>
 <div class="app">
   <aside class="sidebar" id="sidebar">
-    <div class="brand"><div class="brand-mark">م</div><div><div class="brand-text">پرونده‌های مطب</div><div class="brand-sub" id="clinic-sub">آنلاین</div></div></div>
+    <div class="brand" onclick="goHome()" style="cursor:pointer;" title="بازگشت به صفحه‌ی اصلی"><div class="brand-mark">م</div><div><div class="brand-text">پرونده‌های مطب</div><div class="brand-sub" id="clinic-sub">آنلاین</div></div></div>
     <button class="nav-item active" onclick="navigate('list')" id="nav-list">
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
       لیست بیماران
@@ -300,6 +317,11 @@
       گفتگوی کلی
       <span class="nav-badge" id="chat-badge" style="display:none;">0</span>
     </button>
+    <button class="nav-item" onclick="navigate('notifications')" id="nav-notifications">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+      اعلان‌ها
+      <span class="nav-badge" id="notif-nav-badge" style="display:none;">0</span>
+    </button>
     <button class="nav-item" onclick="navigate('reminders')" id="nav-reminders">
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg>
       یادآوری‌ها
@@ -311,6 +333,11 @@
     </button>
     <div class="sidebar-footer">
       <div class="role-pill"><div class="role-avatar" id="role-avatar">ر</div><div><div class="role-name" id="role-name">—</div><div class="role-label" id="role-label">—</div></div></div>
+      <button class="theme-toggle-btn" onclick="toggleTheme()" id="theme-toggle-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="theme-icon-moon"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="theme-icon-sun" style="display:none;"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <span id="theme-toggle-label">حالت تیره</span>
+      </button>
       <button class="logout-btn" onclick="doLogout()">خروج از حساب</button>
     </div>
   </aside>
@@ -318,7 +345,7 @@
   <div style="flex:1; min-width:0; display:flex; flex-direction:column;">
     <div class="mobile-topbar">
       <button class="menu-btn" onclick="toggleSidebar(true)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
-      <div class="brand"><div class="brand-mark" style="width:28px;height:28px;font-size:13px;">م</div><div class="brand-text" style="font-size:14px;">پرونده‌های مطب</div></div>
+      <div class="brand" onclick="goHome()" style="cursor:pointer;"><div class="brand-mark" style="width:28px;height:28px;font-size:13px;">م</div><div class="brand-text" style="font-size:14px;">پرونده‌های مطب</div></div>
       <div style="width:36px;"></div>
     </div>
 
@@ -434,6 +461,15 @@
         </div>
       </section>
 
+      <!-- NOTIFICATIONS (full page) -->
+      <section id="view-notifications" style="display:none;">
+        <div class="topbar">
+          <div><div class="page-title">اعلان‌ها</div><div class="page-sub">تاریخچه‌ی کامل اعلان‌ها</div></div>
+          <span class="notif-mark-all" onclick="markAllNotifsRead()">علامت‌گذاری همه به‌عنوان خوانده‌شده</span>
+        </div>
+        <div class="list-card"><div id="notif-page-list"></div></div>
+      </section>
+
       <!-- REMINDERS -->
       <section id="view-reminders" style="display:none;">
         <div class="topbar">
@@ -518,6 +554,8 @@ let currentProfile = null; // { id, full_name, role }
 let patients = [];
 let profilesById = {};
 let activePatientId = null;
+let visitsShownCount = 8;
+let commentsShownCount = 15;
 let generalMessages = [];
 let reminders = [];
 let notifications = [];
@@ -737,6 +775,7 @@ function subscribeRealtime(){
       updateBellBadge();
       ringBell();
       renderNotifList();
+      if(document.getElementById('view-notifications').style.display !== 'none') renderNotifPage();
     }).subscribe();
 }
 
@@ -748,6 +787,10 @@ function ringBell(){
 function updateBellBadge(){
   const unread = notifications.filter(n => !n.read_at).length;
   document.getElementById('bell-dot').classList.toggle('show', unread > 0);
+  const navBadge = document.getElementById('notif-nav-badge');
+  if(unread > 0){ navBadge.style.display='inline-block'; navBadge.textContent = toPersianDigits(unread); }
+  else { navBadge.style.display='none'; }
+  if(document.getElementById('view-list').style.display !== 'none') renderList();
 }
 function updateChatBadge(){
   const unread = lastSeenGeneralAt ? generalMessages.filter(m => new Date(m.created_at) > new Date(lastSeenGeneralAt) && m.author_id !== (currentProfile && currentProfile.id)).length : generalMessages.length;
@@ -765,9 +808,9 @@ function updateReminderBadge(){
 
 /* ================= Navigation ================= */
 function navigate(view){
-  ['list','detail','stats','chat','reminders','invites'].forEach(v => document.getElementById('view-'+v).style.display = (v===view?'block':'none'));
-  ['nav-list','nav-stats','nav-chat','nav-reminders','nav-invites'].forEach(id => document.getElementById(id).classList.remove('active'));
-  const navId = {list:'nav-list', stats:'nav-stats', chat:'nav-chat', reminders:'nav-reminders', invites:'nav-invites'}[view];
+  ['list','detail','stats','chat','reminders','invites','notifications'].forEach(v => document.getElementById('view-'+v).style.display = (v===view?'block':'none'));
+  ['nav-list','nav-stats','nav-chat','nav-reminders','nav-invites','nav-notifications'].forEach(id => document.getElementById(id).classList.remove('active'));
+  const navId = {list:'nav-list', stats:'nav-stats', chat:'nav-chat', reminders:'nav-reminders', invites:'nav-invites', notifications:'nav-notifications'}[view];
   if(navId) document.getElementById(navId).classList.add('active');
   toggleSidebar(false);
   window.scrollTo(0,0);
@@ -775,7 +818,9 @@ function navigate(view){
   if(view==='chat'){ renderGeneralThread(); lastSeenGeneralAt = new Date().toISOString(); localStorage.setItem('lastSeenGeneralAt', lastSeenGeneralAt); updateChatBadge(); }
   if(view==='reminders') renderReminders();
   if(view==='invites') renderInviteList();
+  if(view==='notifications') renderNotifPage();
 }
+function goHome(){ navigate('list'); }
 function toggleSidebar(open){ document.getElementById('sidebar').classList.toggle('open', open); document.getElementById('overlay').classList.toggle('show', open); }
 
 function applyAccessControl(){
@@ -811,9 +856,10 @@ function renderList(){
   body.innerHTML = filtered.map((p,i) => {
     const rec = visitRecency(p.updated_at);
     const dotClass = rec==='recent'?'dot-recent':rec==='mid'?'dot-mid':'dot-old';
+    const hasUnread = notifications.some(n => !n.read_at && n.patient_id === p.id);
     const lastVisitLabel = p.visits && p.visits.length ? fmtTime(p.visits[0].created_at) : '—';
     return `<div class="patient-row" style="animation-delay:${i*0.03}s" onclick="openPatient('${p.id}')">
-      <div class="patient-identity"><span class="status-dot ${dotClass}"></span><div class="patient-avatar">${initials(p.name)}</div><div><div class="patient-name">${p.name}</div><div class="patient-file">پرونده ${p.file_number}</div></div></div>
+      <div class="patient-identity"><span class="status-dot ${dotClass} ${hasUnread?'dot-updated':''}" title="${hasUnread?'به‌روزرسانی جدید':''}"></span><div class="patient-avatar">${initials(p.name)}</div><div><div class="patient-name">${p.name}</div><div class="patient-file">پرونده ${p.file_number}</div></div></div>
       <div class="col-file col-file-text">${p.file_number}</div>
       <div class="col-meta col-meta-text">${p.age?toPersianDigits(p.age):'—'} ساله، ${p.gender||'—'}</div>
       <div class="col-visit col-visit-text">${lastVisitLabel}</div>
@@ -839,12 +885,32 @@ async function openPatient(id){
   document.getElementById('field-history').value = p.history || '';
   document.getElementById('field-diagnosis').value = p.diagnosis || '';
   document.getElementById('field-nutrition').value = p.nutrition_notes || '';
-  document.getElementById('visit-timeline').innerHTML = (p.visits||[]).slice().sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).map(v =>
-    `<div class="visit-entry"><div class="visit-date">${fmtTime(v.created_at)}</div><div class="visit-note">${v.note}</div></div>`
-  ).join('') || '<div class="visit-entry"><div class="visit-note" style="color:var(--ink-faint)">هنوز ویزیتی ثبت نشده.</div></div>';
+  visitsShownCount = 8;
+  commentsShownCount = 15;
+  renderVisitTimeline(p);
   applyAccessControl();
   navigate('detail');
   loadComments(id);
+}
+
+function renderVisitTimeline(p){
+  const el = document.getElementById('visit-timeline');
+  const sorted = (p.visits||[]).slice().sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  if(sorted.length === 0){ el.innerHTML = '<div class="visit-entry"><div class="visit-note" style="color:var(--ink-faint)">هنوز ویزیتی ثبت نشده.</div></div>'; return; }
+  const visible = sorted.slice(0, visitsShownCount);
+  let html = visible.map(v => {
+    const author = profilesById[v.created_by];
+    return `<div class="visit-entry"><div class="visit-head"><span class="visit-date">${fmtTime(v.created_at)}</span><span class="visit-author">${author ? author.full_name : 'نامشخص'}</span></div><div class="visit-note">${v.note}</div></div>`;
+  }).join('');
+  if(sorted.length > visitsShownCount){
+    html += `<button class="load-more-btn" onclick="loadMoreVisits()">نمایش ${toPersianDigits(Math.min(8, sorted.length - visitsShownCount))} ویزیت قبلی دیگر (از ${toPersianDigits(sorted.length)} ویزیت)</button>`;
+  }
+  el.innerHTML = html;
+}
+function loadMoreVisits(){
+  visitsShownCount += 8;
+  const p = patients.find(x => x.id === activePatientId);
+  if(p) renderVisitTimeline(p);
 }
 
 function refreshDetailIfOpen(){ if(document.getElementById('view-detail').style.display !== 'none') openPatient(activePatientId); }
@@ -903,19 +969,32 @@ async function deletePatient(){
 }
 
 /* ---- Per-patient comments ---- */
+let allCommentsCache = [];
 async function loadComments(patientId){
   const { data } = await sb.from('patient_comments').select('*').eq('patient_id', patientId).order('created_at', {ascending:true});
-  renderCommentThread(data || []);
+  allCommentsCache = data || [];
+  renderCommentThread();
 }
-function renderCommentThread(comments){
+function renderCommentThread(){
   const el = document.getElementById('comment-thread');
-  if(comments.length === 0){ el.innerHTML = '<div class="loading-state" style="padding:16px 0;">هنوز یادداشتی ثبت نشده.</div>'; return; }
-  el.innerHTML = comments.map(c => {
+  if(allCommentsCache.length === 0){ el.innerHTML = '<div class="loading-state" style="padding:16px 0;">هنوز یادداشتی ثبت نشده.</div>'; return; }
+  const total = allCommentsCache.length;
+  const visible = total > commentsShownCount ? allCommentsCache.slice(total - commentsShownCount) : allCommentsCache;
+  let html = '';
+  if(total > commentsShownCount){
+    html += `<button class="load-more-btn" onclick="loadMoreComments()">نمایش ${toPersianDigits(Math.min(15, total - commentsShownCount))} یادداشت قدیمی‌تر دیگر (از ${toPersianDigits(total)} یادداشت)</button>`;
+  }
+  html += visible.map(c => {
     const author = profilesById[c.author_id];
     const isMe = c.author_id === currentProfile.id;
     return `<div class="comment-item"><div class="comment-head"><span class="comment-author ${isMe?'me':''}">${author?author.full_name:'—'}</span><span class="comment-time">${fmtTime(c.created_at)}</span></div><div class="comment-text">${c.message}</div></div>`;
   }).join('');
+  el.innerHTML = html;
   el.scrollTop = el.scrollHeight;
+}
+function loadMoreComments(){
+  commentsShownCount += 15;
+  renderCommentThread();
 }
 async function sendComment(){
   const input = document.getElementById('comment-input');
@@ -1132,11 +1211,18 @@ function notifText(n){
 function renderNotifList(){
   const el = document.getElementById('notif-list');
   if(notifications.length === 0){ el.innerHTML = '<div class="notif-empty">اعلانی وجود ندارد.</div>'; return; }
-  el.innerHTML = notifications.map(n => `
-    <div class="notif-item ${n.read_at?'':'unread'}" onclick="handleNotifClick('${n.id}', '${n.type}', ${n.patient_id ? `'${n.patient_id}'` : 'null'})">
+  el.innerHTML = notifications.slice(0, 8).map(n => notifItemHtml(n)).join('');
+}
+function renderNotifPage(){
+  const el = document.getElementById('notif-page-list');
+  if(notifications.length === 0){ el.innerHTML = '<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg><p>اعلانی وجود ندارد.</p></div>'; return; }
+  el.innerHTML = notifications.map(n => notifItemHtml(n)).join('');
+}
+function notifItemHtml(n){
+  return `<div class="notif-item ${n.read_at?'':'unread'}" onclick="handleNotifClick('${n.id}', '${n.type}', ${n.patient_id ? `'${n.patient_id}'` : 'null'})">
       <div class="notif-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${notifIcons[n.type]||''}</svg></div>
       <div><div class="notif-text">${notifText(n)}</div><div class="notif-time">${fmtTime(n.created_at)}</div></div>
-    </div>`).join('');
+    </div>`;
 }
 async function handleNotifClick(id, type, patientId){
   const n = notifications.find(x => x.id === id);
@@ -1156,8 +1242,29 @@ async function markAllNotifsRead(){
   notifications.forEach(n => { if(!n.read_at) n.read_at = now; });
   updateBellBadge();
   renderNotifList();
+  if(document.getElementById('view-notifications').style.display !== 'none') renderNotifPage();
   await sb.from('notifications').update({read_at: now}).in('id', unreadIds);
 }
+
+/* ================= Theme (dark/light) ================= */
+function applyTheme(theme){
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('theme-icon-moon').style.display = theme==='dark' ? 'none' : 'block';
+  document.getElementById('theme-icon-sun').style.display = theme==='dark' ? 'block' : 'none';
+  document.getElementById('theme-toggle-label').textContent = theme==='dark' ? 'حالت روشن' : 'حالت تیره';
+}
+function toggleTheme(){
+  const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  const next = current === 'dark' ? 'light' : 'dark';
+  applyTheme(next);
+  localStorage.setItem('clinicAppTheme', next); // UI preference only, not app data
+}
+(function initTheme(){
+  const saved = localStorage.getItem('clinicAppTheme');
+  const preferred = saved || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  document.documentElement.setAttribute('data-theme', preferred);
+  document.addEventListener('DOMContentLoaded', () => applyTheme(preferred));
+})();
 
 /* ================= Init ================= */
 checkSession();
