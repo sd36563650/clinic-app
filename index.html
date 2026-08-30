@@ -249,7 +249,7 @@
   <div class="login-card">
     <div class="login-mark">م</div>
     <div class="login-title">ثبت‌نام در سامانه</div>
-    <div class="login-sub">فقط با کد دعوتی که از دکتر رحیمی دریافت کرده‌اید</div>
+    <div class="login-sub">فقط با کد دعوتی که از مسئول مطب دریافت کرده‌اید</div>
     <div class="login-error" id="signup-error"></div>
 
     <div class="role-chip-row">
@@ -257,7 +257,7 @@
       <div class="role-chip" id="signup-chip-nutrition" onclick="selectSignupRole('nutrition')">متخصص تغذیه</div>
     </div>
 
-    <div class="login-field"><label>نام و نام خانوادگی</label><input type="text" id="signup-name" placeholder="مثلاً دکتر رحیمی"></div>
+    <div class="login-field"><label>نام و نام خانوادگی</label><input type="text" id="signup-name" placeholder="نام کامل خود را وارد کنید"></div>
     <div class="login-field"><label>ایمیل</label><input type="email" id="signup-email" placeholder="ایمیل خود را وارد کنید"></div>
     <div class="login-field"><label>رمز عبور</label><input type="password" id="signup-pass" placeholder="حداقل ۶ کاراکتر"></div>
     <div class="login-field"><label>کد دعوت</label><input type="text" id="signup-invite" placeholder="مثلاً DOC-XXXXX یا NUT-XXXXX"></div>
@@ -289,6 +289,10 @@
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg>
       یادآوری‌ها
       <span class="nav-badge" id="reminder-badge" style="display:none;">0</span>
+    </button>
+    <button class="nav-item" onclick="navigate('invites')" id="nav-invites" style="display:none;">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
+      دعوت همکار جدید
     </button>
     <div class="sidebar-footer">
       <div class="role-pill"><div class="role-avatar" id="role-avatar">ر</div><div><div class="role-name" id="role-name">—</div><div class="role-label" id="role-label">—</div></div></div>
@@ -418,6 +422,29 @@
           </button>
         </div>
         <div class="panel"><div id="reminder-list"></div></div>
+      </section>
+
+      <!-- INVITES (doctor only) -->
+      <section id="view-invites" style="display:none;">
+        <div class="topbar">
+          <div><div class="page-title">دعوت همکار جدید</div><div class="page-sub">یک کد بساز و به همکار جدید بده تا بتواند خودش ثبت‌نام کند</div></div>
+        </div>
+        <div class="panel">
+          <div class="field-grid-2" style="margin-bottom:16px;">
+            <div class="field-group">
+              <div class="field-label">نقش کاربر جدید</div>
+              <select class="field-input" id="invite-role-select"><option value="nutrition">متخصص تغذیه</option><option value="doctor">دکتر</option></select>
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="generateInviteCode()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>ساخت کد دعوت جدید
+          </button>
+          <div class="sidenote" id="new-invite-display" style="display:none; margin-top:18px; font-size:16px; font-weight:700; color:var(--accent-dark); justify-content:center; letter-spacing:1px;"></div>
+        </div>
+        <div class="panel" style="margin-top:16px;">
+          <div class="panel-title">کدهای قبلی</div>
+          <div id="invite-list"></div>
+        </div>
       </section>
     </main>
   </div>
@@ -582,13 +609,14 @@ async function doLogin(){
 async function loadProfileAndEnter(){
   const { data: profile, error } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
   if(error || !profile){
-    showToast('پروفایل این کاربر هنوز در دیتابیس ثبت نشده — با دکتر رحیمی تماس بگیرید.', true);
+    showToast('پروفایل این کاربر هنوز در دیتابیس ثبت نشده — با مسئول مطب تماس بگیرید.', true);
     return;
   }
   currentProfile = profile;
   document.getElementById('role-avatar').textContent = initials(profile.full_name);
   document.getElementById('role-name').textContent = profile.full_name;
   document.getElementById('role-label').textContent = profile.role === 'doctor' ? 'دسترسی کامل' : 'دسترسی محدود';
+  if(profile.role === 'doctor') document.getElementById('nav-invites').style.display = 'flex';
   document.getElementById('view-login').style.display = 'none';
   document.getElementById('view-app').style.display = 'block';
   await Promise.all([loadPatients(), loadAllProfiles(), loadGeneralMessages(), loadReminders()]);
@@ -688,15 +716,16 @@ function updateReminderBadge(){
 
 /* ================= Navigation ================= */
 function navigate(view){
-  ['list','detail','stats','chat','reminders'].forEach(v => document.getElementById('view-'+v).style.display = (v===view?'block':'none'));
-  ['nav-list','nav-stats','nav-chat','nav-reminders'].forEach(id => document.getElementById(id).classList.remove('active'));
-  const navId = {list:'nav-list', stats:'nav-stats', chat:'nav-chat', reminders:'nav-reminders'}[view];
+  ['list','detail','stats','chat','reminders','invites'].forEach(v => document.getElementById('view-'+v).style.display = (v===view?'block':'none'));
+  ['nav-list','nav-stats','nav-chat','nav-reminders','nav-invites'].forEach(id => document.getElementById(id).classList.remove('active'));
+  const navId = {list:'nav-list', stats:'nav-stats', chat:'nav-chat', reminders:'nav-reminders', invites:'nav-invites'}[view];
   if(navId) document.getElementById(navId).classList.add('active');
   toggleSidebar(false);
   window.scrollTo(0,0);
   if(view==='stats') renderStats();
   if(view==='chat'){ renderGeneralThread(); lastSeenGeneralAt = new Date().toISOString(); localStorage.setItem('lastSeenGeneralAt', lastSeenGeneralAt); updateChatBadge(); }
   if(view==='reminders') renderReminders();
+  if(view==='invites') renderInviteList();
 }
 function toggleSidebar(open){ document.getElementById('sidebar').classList.toggle('open', open); document.getElementById('overlay').classList.toggle('show', open); }
 
@@ -970,6 +999,36 @@ function renderReminders(){
 }
 async function toggleReminder(id, done){
   await sb.from('reminders').update({ done }).eq('id', id);
+}
+
+/* ================= Invite management (doctor only) ================= */
+function randomInviteCode(role){
+  const prefix = role === 'doctor' ? 'DOC' : 'NUT';
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no ambiguous chars like 0/O/1/I
+  let suffix = '';
+  for(let i=0;i<6;i++) suffix += chars[Math.floor(Math.random()*chars.length)];
+  return `${prefix}-${suffix}`;
+}
+async function generateInviteCode(){
+  const role = document.getElementById('invite-role-select').value;
+  const code = randomInviteCode(role);
+  const { error } = await sb.from('invite_codes').insert({ code, role });
+  if(error){ showToast('خطا در ساخت کد — دوباره تلاش کنید', true); return; }
+  const display = document.getElementById('new-invite-display');
+  display.style.display = 'flex';
+  display.innerHTML = `کد جدید: <span style="user-select:all; margin-right:8px;">${code}</span>`;
+  showToast('کد دعوت ساخته شد — همین را به همکار جدید بدهید');
+  renderInviteList();
+}
+async function renderInviteList(){
+  const { data } = await sb.from('invite_codes').select('*').order('code', {ascending:false});
+  const el = document.getElementById('invite-list');
+  if(!data || data.length===0){ el.innerHTML = '<div class="loading-state">هنوز کدی ساخته نشده.</div>'; return; }
+  el.innerHTML = data.map(inv => {
+    const roleLabel = inv.role === 'doctor' ? 'دکتر' : 'متخصص تغذیه';
+    const status = inv.used_by ? `<span style="color:var(--ink-faint);">استفاده‌شده</span>` : `<span style="color:var(--accent);">فعال</span>`;
+    return `<div class="reminder-item"><div style="flex:1;"><div class="reminder-title" style="user-select:all;">${inv.code}</div><div class="reminder-due">نقش: ${roleLabel}</div></div>${status}</div>`;
+  }).join('');
 }
 
 /* ================= Init ================= */
