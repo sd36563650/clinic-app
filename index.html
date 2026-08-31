@@ -522,11 +522,31 @@
             <div class="bar-chart" id="age-bars"></div>
           </div>
         </div>
+
+        <div class="panel" style="margin-top:16px;">
+          <div class="panel-title">آرشیو گزارش ماهانه <span class="optional-tag">به‌صورت خودکار در ابتدای هر ماه شمسی ساخته می‌شود</span></div>
+          <div id="monthly-reports-list"></div>
+        </div>
+      </section>
+
+      <!-- Monthly report detail -->
+      <section id="view-monthly-report-detail" style="display:none;">
+        <button class="back-link" onclick="navigate('stats')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>بازگشت به آمار</button>
+        <div class="topbar"><div><div class="page-title" id="monthly-report-title">—</div><div class="page-sub">گزارش این ماه</div></div></div>
+        <div class="stat-grid">
+          <div class="stat-card"><div class="stat-label">بیماران جدید این ماه</div><div class="stat-value" id="mr-new-patients">—</div></div>
+          <div class="stat-card"><div class="stat-label">ویزیت‌های این ماه</div><div class="stat-value" id="mr-visits">—</div></div>
+          <div class="stat-card"><div class="stat-label">خانم</div><div class="stat-value" id="mr-women">—</div></div>
+          <div class="stat-card"><div class="stat-label">آقا</div><div class="stat-value" id="mr-men">—</div></div>
+        </div>
       </section>
 
       <!-- CHAT -->
       <section id="view-chat" style="display:none;">
-        <div class="topbar"><div><div class="page-title">گفتگوی کلی</div><div class="page-sub">یادداشت‌های عمومی بین دکتر و متخصص تغذیه (بدون وصل به پرونده‌ی خاص)</div></div></div>
+        <div class="topbar">
+          <div><div class="page-title">گفتگوی کلی</div><div class="page-sub">یادداشت‌های عمومی بین دکتر و متخصص تغذیه (بدون وصل به پرونده‌ی خاص)</div></div>
+          <button class="btn btn-sm" style="color:var(--danger); border-color:var(--danger-soft);" onclick="openClearChatModal()">پاک‌کردن تاریخچه</button>
+        </div>
         <div class="panel">
           <div class="comment-thread" id="general-thread" style="max-height:460px;"></div>
           <div class="comment-input-row"><input class="field-input" id="general-input" placeholder="پیامی بنویس…" onkeydown="if(event.key==='Enter') sendGeneralMessage()"><button class="btn btn-primary btn-sm" onclick="sendGeneralMessage()">ارسال</button></div>
@@ -798,7 +818,16 @@ async function loadPatients(){
 
 async function loadGeneralMessages(){
   const { data } = await sb.from('general_messages').select('*').order('created_at', {ascending:true});
-  generalMessages = data || [];
+  let msgs = data || [];
+
+  const { data: hiddenRows } = await sb.from('general_messages_hidden_for').select('message_id').eq('user_id', currentProfile.id);
+  const hiddenIds = new Set((hiddenRows||[]).map(h => h.message_id));
+  if(hiddenIds.size) msgs = msgs.filter(m => !hiddenIds.has(m.id));
+
+  const { data: clearPoint } = await sb.from('general_chat_clear_points').select('cleared_before').eq('user_id', currentProfile.id).maybeSingle();
+  if(clearPoint) msgs = msgs.filter(m => new Date(m.created_at) > new Date(clearPoint.cleared_before));
+
+  generalMessages = msgs;
   updateChatBadge();
 }
 
@@ -852,6 +881,10 @@ function subscribeRealtime(){
       generalMessages.push(payload.new);
       updateChatBadge();
       if(document.getElementById('view-chat').style.display !== 'none') renderGeneralThread();
+    })
+    .on('postgres_changes', {event:'DELETE', schema:'public', table:'general_messages'}, payload => {
+      generalMessages = generalMessages.filter(m => m.id !== payload.old.id);
+      if(document.getElementById('view-chat').style.display !== 'none') renderGeneralThread();
     }).subscribe();
 
   sb.channel('reminders-changes')
@@ -898,9 +931,9 @@ function updateReminderBadge(){
 
 /* ================= Navigation ================= */
 function navigate(view){
-  ['list','detail','stats','chat','reminders','invites','notifications'].forEach(v => document.getElementById('view-'+v).style.display = (v===view?'block':'none'));
+  ['list','detail','stats','chat','reminders','invites','notifications','monthly-report-detail'].forEach(v => document.getElementById('view-'+v).style.display = (v===view?'block':'none'));
   ['nav-list','nav-stats','nav-chat','nav-reminders','nav-invites','nav-notifications'].forEach(id => document.getElementById(id).classList.remove('active'));
-  const navId = {list:'nav-list', stats:'nav-stats', chat:'nav-chat', reminders:'nav-reminders', invites:'nav-invites', notifications:'nav-notifications'}[view];
+  const navId = {list:'nav-list', stats:'nav-stats', chat:'nav-chat', reminders:'nav-reminders', invites:'nav-invites', notifications:'nav-notifications', 'monthly-report-detail':'nav-stats'}[view];
   if(navId) document.getElementById(navId).classList.add('active');
   toggleSidebar(false);
   window.scrollTo(0,0);
@@ -1268,7 +1301,16 @@ function renderGeneralThread(){
   el.innerHTML = generalMessages.map(m => {
     const author = profilesById[m.author_id];
     const isMe = m.author_id === currentProfile.id;
-    return `<div class="comment-item"><div class="comment-head"><span class="comment-author ${isMe?'me':''}">${author?author.full_name:'—'}</span><span class="comment-time">${fmtTime(m.created_at)}</span></div><div class="comment-text">${m.message}</div></div>`;
+    return `<div class="comment-item">
+      <div class="comment-head">
+        <span class="comment-author ${isMe?'me':''}">${author?author.full_name:'—'}</span>
+        <span style="display:flex; align-items:center; gap:6px;">
+          <span class="comment-time">${fmtTime(m.created_at)}</span>
+          <button class="entry-action-btn danger" title="حذف پیام" onclick="openDeleteMessageChoice('${m.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg></button>
+        </span>
+      </div>
+      <div class="comment-text">${m.message}</div>
+    </div>`;
   }).join('');
   el.scrollTop = el.scrollHeight;
 }
@@ -1280,6 +1322,49 @@ async function sendGeneralMessage(){
   const { error } = await sb.from('general_messages').insert({ author_id: currentProfile.id, message: msg });
   if(error){ showToast('ارسال ناموفق بود', true); return; }
   notifyOthers('general_message', null, msg);
+}
+
+/* ---- Delete single message ---- */
+function openDeleteMessageChoice(messageId){
+  const choice = confirm('این پیام برای هر دو نفر حذف شود؟\n\nتأیید = برای هر دو نفر\nلغو = فقط از دید خودم پاک شود');
+  if(choice) deleteMessageForBoth(messageId);
+  else deleteMessageForMe(messageId);
+}
+async function deleteMessageForBoth(messageId){
+  const { error } = await sb.from('general_messages').delete().eq('id', messageId);
+  if(error){ showToast('خطا در حذف', true); return; }
+  generalMessages = generalMessages.filter(m => m.id !== messageId);
+  renderGeneralThread();
+  showToast('پیام برای هر دو نفر حذف شد');
+}
+async function deleteMessageForMe(messageId){
+  const { error } = await sb.from('general_messages_hidden_for').insert({ message_id: messageId, user_id: currentProfile.id });
+  if(error){ showToast('خطا در حذف', true); return; }
+  generalMessages = generalMessages.filter(m => m.id !== messageId);
+  renderGeneralThread();
+  showToast('پیام فقط از دید شما پاک شد');
+}
+
+/* ---- Clear entire chat history ---- */
+function openClearChatModal(){
+  const choice = confirm('کل تاریخچه‌ی گفتگو حذف شود؟\n\nتأیید = برای هر دو نفر (همه‌ی پیام‌ها برای همیشه حذف می‌شوند)\nلغو = فقط از دید خودم پاک شود (همکارم همچنان تاریخچه را می‌بیند)');
+  if(choice) clearChatForBoth();
+  else clearChatForMe();
+}
+async function clearChatForBoth(){
+  const { error } = await sb.from('general_messages').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  if(error){ showToast('خطا در پاک‌کردن', true); return; }
+  generalMessages = [];
+  renderGeneralThread();
+  showToast('تاریخچه برای هر دو نفر پاک شد');
+}
+async function clearChatForMe(){
+  const now = new Date().toISOString();
+  const { error } = await sb.from('general_chat_clear_points').upsert({ user_id: currentProfile.id, cleared_before: now });
+  if(error){ showToast('خطا در پاک‌کردن', true); return; }
+  generalMessages = [];
+  renderGeneralThread();
+  showToast('تاریخچه فقط از دید شما پاک شد');
 }
 
 /* ================= New patient ================= */
@@ -1362,6 +1447,41 @@ function renderStats(){
   document.getElementById('age-bars').innerHTML = buckets.map((b,i) => `
     <div class="bar-col"><span style="font-size:11px;color:var(--ink-soft);font-weight:700;">${toPersianDigits(counts[i])}</span><div class="bar" style="height:${counts[i]/maxCount*100}%"></div><div class="bar-age-label">${b.label}</div></div>
   `).join('');
+
+  loadMonthlyReports();
+}
+
+/* ---- Monthly reports archive ---- */
+let monthlyReportsCache = [];
+async function loadMonthlyReports(){
+  const { data } = await sb.from('monthly_reports').select('*').order('jalali_year', {ascending:false}).order('jalali_month', {ascending:false});
+  monthlyReportsCache = data || [];
+  renderMonthlyReportsList();
+}
+function renderMonthlyReportsList(){
+  const el = document.getElementById('monthly-reports-list');
+  if(monthlyReportsCache.length === 0){
+    el.innerHTML = '<div class="loading-state">هنوز گزارشی ساخته نشده — اولین گزارش در ابتدای ماه شمسی بعدی به‌صورت خودکار ساخته می‌شود.</div>';
+    return;
+  }
+  el.innerHTML = monthlyReportsCache.map(r => `
+    <div class="reminder-item" style="cursor:pointer;" onclick="openMonthlyReport('${r.id}')">
+      <div style="flex:1;">
+        <div class="reminder-title">${r.label}</div>
+        <div class="reminder-due">${toPersianDigits(r.new_patients_count)} بیمار جدید · ${toPersianDigits(r.total_visits_count)} ویزیت</div>
+      </div>
+      <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+    </div>`).join('');
+}
+function openMonthlyReport(id){
+  const r = monthlyReportsCache.find(x => x.id === id);
+  if(!r) return;
+  document.getElementById('monthly-report-title').textContent = 'گزارش ' + r.label;
+  document.getElementById('mr-new-patients').textContent = toPersianDigits(r.new_patients_count);
+  document.getElementById('mr-visits').textContent = toPersianDigits(r.total_visits_count);
+  document.getElementById('mr-women').textContent = toPersianDigits(r.women_count);
+  document.getElementById('mr-men').textContent = toPersianDigits(r.men_count);
+  navigate('monthly-report-detail');
 }
 
 /* ================= Reminders ================= */
@@ -1459,6 +1579,7 @@ function notifText(n){
   if(n.type === 'patient_update') return `<b>${actorName}</b> پرونده‌ی <b>${n.patient_name || 'یک بیمار'}</b> را به‌روزرسانی کرد`;
   if(n.type === 'patient_comment') return `<b>${actorName}</b> یادداشتی روی پرونده‌ی <b>${n.patient_name || 'یک بیمار'}</b> نوشت`;
   if(n.type === 'general_message') return `<b>${actorName}</b> در گفتگوی کلی پیام داد`;
+  if(n.type === 'reminder_due' && !n.actor_id && n.message_preview) return `<b>${n.message_preview}</b>`;
   return `${actorName}`;
 }
 function renderNotifList(){
@@ -1486,6 +1607,8 @@ async function handleNotifClick(id, type, patientId){
     openPatient(patientId);
   } else if(type === 'general_message'){
     navigate('chat');
+  } else if(type === 'reminder_due' && n && !n.actor_id){
+    navigate('stats');
   }
 }
 async function markAllNotifsRead(){
