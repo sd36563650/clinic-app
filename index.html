@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
   :root{
     --bg: #F7FAF9; --surface: #FFFFFF; --surface-2: #EEF4F2;
@@ -256,6 +257,10 @@
   .form-row{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
   .field-input-modal{ width:100%; border:1px solid var(--line); border-radius: var(--radius-sm); padding: 10px 12px; font-size:14px; outline:none; }
   .field-input-modal:focus{ border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+  .checkbox-gate-label{ display:flex; align-items:center; gap:9px; cursor:pointer; font-size:14.5px; font-weight:700; color:var(--ink); }
+  .checkbox-gate-label input{ width:18px; height:18px; accent-color: var(--accent); cursor:pointer; }
+  .birthdate-row{ display:grid; grid-template-columns: 1fr 1.4fr 1fr; gap:8px; }
+  .age-preview{ font-size:12px; color:var(--accent-dark); margin-top:6px; font-weight:600; }
   .error-text{ font-size:12px; color:var(--danger); margin-top:5px; display:none; }
   .error-text.show{ display:block; }
   .file-number-row{ display:flex; gap:8px; align-items:center; }
@@ -442,18 +447,30 @@
             <div class="detail-avatar" id="detail-avatar">م</div>
             <div><div class="detail-name" id="detail-name">—</div><div class="detail-meta" id="detail-meta"></div></div>
           </div>
+          <button class="btn" id="pdf-download-btn" onclick="downloadPatientPDF()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+            دانلود PDF
+          </button>
         </div>
         <div class="detail-grid">
           <div>
             <div class="panel">
-              <div class="panel-title">اطلاعات تماس و بیمه</div>
-              <div class="field-grid-2">
+              <div class="panel-title">اطلاعات تماس</div>
+              <div class="field-group">
+                <div class="field-label">تاریخ تولد (شمسی)</div>
+                <div class="birthdate-row">
+                  <select class="field-input" id="edit-birth-day"></select>
+                  <select class="field-input" id="edit-birth-month"></select>
+                  <select class="field-input" id="edit-birth-year"></select>
+                </div>
+                <div class="age-preview" id="edit-age-preview"></div>
+              </div>
+              <div class="field-grid-2" style="margin-top:14px;">
                 <div class="field-group"><div class="field-label">کد ملی</div><input class="field-input" id="field-nationalid"></div>
                 <div class="field-group"><div class="field-label">شماره تماس</div><input class="field-input" id="field-phone"></div>
-                <div class="field-group"><div class="field-label">شماره بیمه</div><input class="field-input" id="field-insurance"></div>
                 <div class="field-group"><div class="field-label">شغل</div><input class="field-input" id="field-job"></div>
+                <div class="field-group"><div class="field-label">ارجاع‌دهنده</div><input class="field-input" id="field-referrer"></div>
                 <div class="field-group" style="grid-column:1/-1;"><div class="field-label">آدرس</div><input class="field-input" id="field-address"></div>
-                <div class="field-group" style="grid-column:1/-1;"><div class="field-label">ارجاع‌دهنده</div><input class="field-input" id="field-referrer"></div>
               </div>
               <button class="btn btn-primary btn-sm" style="margin-top:14px;" onclick="saveRecord()">ذخیره اطلاعات تماس</button>
             </div>
@@ -463,6 +480,50 @@
               <div class="action-row" style="margin-top:14px;">
                 <input class="field-input" id="input-history" placeholder="مورد جدید به شرح حال اضافه کن…" onkeydown="if(event.key==='Enter') addRecordEntry('history')">
                 <button class="btn btn-primary" style="white-space:nowrap;" onclick="addRecordEntry('history')">ثبت</button>
+              </div>
+            </div>
+
+            <div class="panel checkbox-gated-panel" data-field="past_illness">
+              <div class="panel-title"><label class="checkbox-gate-label"><input type="checkbox" id="chk-past_illness" onchange="toggleCheckboxField('past_illness')"> سابقه بیماری‌های قبلی</label></div>
+              <div id="section-past_illness" style="display:none;">
+                <div class="visit-timeline" id="log-past_illness"></div>
+                <div class="action-row" style="margin-top:14px;">
+                  <input class="field-input" id="input-past_illness" placeholder="مورد جدید اضافه کن…" onkeydown="if(event.key==='Enter') addRecordEntry('past_illness')">
+                  <button class="btn btn-primary" style="white-space:nowrap;" onclick="addRecordEntry('past_illness')">ثبت</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel checkbox-gated-panel" data-field="medications">
+              <div class="panel-title"><label class="checkbox-gate-label"><input type="checkbox" id="chk-medications" onchange="toggleCheckboxField('medications')"> داروهای مصرفی</label></div>
+              <div id="section-medications" style="display:none;">
+                <div class="visit-timeline" id="log-medications"></div>
+                <div class="action-row" style="margin-top:14px;">
+                  <input class="field-input" id="input-medications" placeholder="مورد جدید اضافه کن…" onkeydown="if(event.key==='Enter') addRecordEntry('medications')">
+                  <button class="btn btn-primary" style="white-space:nowrap;" onclick="addRecordEntry('medications')">ثبت</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel checkbox-gated-panel" data-field="family_history">
+              <div class="panel-title"><label class="checkbox-gate-label"><input type="checkbox" id="chk-family_history" onchange="toggleCheckboxField('family_history')"> سابقه خانوادگی</label></div>
+              <div id="section-family_history" style="display:none;">
+                <div class="visit-timeline" id="log-family_history"></div>
+                <div class="action-row" style="margin-top:14px;">
+                  <input class="field-input" id="input-family_history" placeholder="مورد جدید اضافه کن…" onkeydown="if(event.key==='Enter') addRecordEntry('family_history')">
+                  <button class="btn btn-primary" style="white-space:nowrap;" onclick="addRecordEntry('family_history')">ثبت</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel checkbox-gated-panel" data-field="allergy">
+              <div class="panel-title"><label class="checkbox-gate-label"><input type="checkbox" id="chk-allergy" onchange="toggleCheckboxField('allergy')"> آلرژی</label></div>
+              <div id="section-allergy" style="display:none;">
+                <div class="visit-timeline" id="log-allergy"></div>
+                <div class="action-row" style="margin-top:14px;">
+                  <input class="field-input" id="input-allergy" placeholder="مورد جدید اضافه کن…" onkeydown="if(event.key==='Enter') addRecordEntry('allergy')">
+                  <button class="btn btn-primary" style="white-space:nowrap;" onclick="addRecordEntry('allergy')">ثبت</button>
+                </div>
               </div>
             </div>
             <div class="panel">
@@ -604,14 +665,23 @@
 <div class="modal-backdrop" id="modal-backdrop">
   <div class="modal">
     <div class="modal-title">ثبت بیمار جدید</div>
-    <div class="modal-sub">فقط نام و سن الزامی است — بقیه‌ی فیلدها اختیاری‌اند.</div>
+    <div class="modal-sub">فقط نام و تاریخ تولد الزامی است — بقیه‌ی فیلدها اختیاری‌اند.</div>
     <div class="modal-section-label">اطلاعات پایه</div>
-    <div class="form-row"><div><input class="field-input-modal" id="new-name" placeholder="نام و نام خانوادگی"><div class="error-text" id="err-name">نام بیمار را وارد کنید</div></div><div><input class="field-input-modal" id="new-age" placeholder="سن" inputmode="numeric"><div class="error-text" id="err-age">سن معتبر وارد کنید</div></div></div>
-    <div class="form-row"><select class="field-input-modal" id="new-gender"><option value="خانم">خانم</option><option value="آقا">آقا</option></select><input class="field-input-modal" id="new-phone" placeholder="شماره تماس (اختیاری)"></div>
+    <div class="form-row"><div><input class="field-input-modal" id="new-name" placeholder="نام و نام خانوادگی"><div class="error-text" id="err-name">نام بیمار را وارد کنید</div></div><select class="field-input-modal" id="new-gender"><option value="خانم">خانم</option><option value="آقا">آقا</option></select></div>
+    <div class="field-group">
+      <div class="field-label">تاریخ تولد (شمسی)</div>
+      <div class="birthdate-row">
+        <select class="field-input-modal" id="new-birth-day"></select>
+        <select class="field-input-modal" id="new-birth-month"></select>
+        <select class="field-input-modal" id="new-birth-year"></select>
+      </div>
+      <div class="error-text" id="err-birthdate">تاریخ تولد را انتخاب کنید</div>
+      <div class="age-preview" id="new-age-preview"></div>
+    </div>
+    <div class="form-row" style="margin-top:12px;"><input class="field-input-modal" id="new-phone" placeholder="شماره تماس (اختیاری)"><input class="field-input-modal" id="new-nationalid" placeholder="کد ملی"></div>
     <div class="modal-section-label">شماره پرونده</div>
     <div class="file-number-row"><input class="field-input-modal" id="new-filenum" placeholder="مثلاً ۰۰۴۳"><label class="auto-toggle"><input type="checkbox" id="new-filenum-auto" checked onchange="toggleAutoFile()"> تولید خودکار</label></div>
     <div class="modal-section-label">اطلاعات تکمیلی (اختیاری)</div>
-    <div class="form-row"><input class="field-input-modal" id="new-nationalid" placeholder="کد ملی"><input class="field-input-modal" id="new-insurance" placeholder="شماره بیمه"></div>
     <div class="form-row"><input class="field-input-modal" id="new-job" placeholder="شغل"><input class="field-input-modal" id="new-referrer" placeholder="ارجاع‌دهنده"></div>
     <input class="field-input-modal" id="new-address" placeholder="آدرس" style="margin-bottom:12px;">
     <textarea class="field-input" id="new-history" rows="2" placeholder="شرح حال اولیه (اختیاری)"></textarea>
@@ -648,9 +718,6 @@ let profilesById = {};
 let activePatientId = null;
 let visitsShownCount = 8;
 let commentsShownCount = 15;
-let historyShownCount = 15;
-let diagnosisShownCount = 15;
-let nutritionShownCount = 15;
 let generalMessages = [];
 let reminders = [];
 let notifications = [];
@@ -669,6 +736,64 @@ function fmtTime(iso){
 function fmtDateOnly(iso){
   const d = new Date(iso);
   return d.toLocaleDateString('fa-IR', {timeZone: TEHRAN_TZ, year:'numeric', month:'long', day:'numeric'});
+}
+
+/* ================= Jalali calendar helpers (birth date picker) ================= */
+const jalaliMonthNames = ['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
+const jalaliFormatter = new Intl.DateTimeFormat('en-US-u-ca-persian', {timeZone: TEHRAN_TZ, year:'numeric', month:'numeric', day:'numeric'});
+
+function gregorianToJalali(date){
+  const parts = jalaliFormatter.formatToParts(date);
+  return {
+    jy: parseInt(parts.find(p=>p.type==='year').value, 10),
+    jm: parseInt(parts.find(p=>p.type==='month').value, 10),
+    jd: parseInt(parts.find(p=>p.type==='day').value, 10),
+  };
+}
+/* Finds the Gregorian date (as an ISO yyyy-mm-dd string) matching a given Jalali y/m/d, via bounded search */
+function jalaliToGregorianISO(jy, jm, jd){
+  const approxGregorianYear = jy + 621; // rough anchor to keep the search window small
+  const anchor = new Date(Date.UTC(approxGregorianYear, 2, 20)); // ~Nowruz
+  for(let offset = -400; offset <= 400; offset++){
+    const candidate = new Date(anchor);
+    candidate.setUTCDate(candidate.getUTCDate() + offset);
+    const j = gregorianToJalali(candidate);
+    if(j.jy === jy && j.jm === jm && j.jd === jd){
+      return candidate.toISOString().slice(0,10);
+    }
+  }
+  return null;
+}
+function calcAgeFromISO(isoDateStr){
+  if(!isoDateStr) return null;
+  const birth = new Date(isoDateStr + 'T00:00:00Z');
+  const today = gregorianToJalali(new Date());
+  const birthJalali = gregorianToJalali(birth);
+  let age = today.jy - birthJalali.jy;
+  if(today.jm < birthJalali.jm || (today.jm === birthJalali.jm && today.jd < birthJalali.jd)) age--;
+  return age;
+}
+function populateBirthdateSelects(prefix){
+  const daySel = document.getElementById(prefix + '-day');
+  const monthSel = document.getElementById(prefix + '-month');
+  const yearSel = document.getElementById(prefix + '-year');
+  daySel.innerHTML = '<option value="">روز</option>' + Array.from({length:31}, (_,i) => `<option value="${i+1}">${toPersianDigits(i+1)}</option>`).join('');
+  monthSel.innerHTML = '<option value="">ماه</option>' + jalaliMonthNames.map((m,i) => `<option value="${i+1}">${m}</option>`).join('');
+  const currentJy = gregorianToJalali(new Date()).jy;
+  let yearOptions = '<option value="">سال</option>';
+  for(let y = currentJy; y >= currentJy - 110; y--) yearOptions += `<option value="${y}">${toPersianDigits(y)}</option>`;
+  yearSel.innerHTML = yearOptions;
+}
+function updateAgePreview(prefix, previewId){
+  const jd = document.getElementById(prefix + '-day').value;
+  const jm = document.getElementById(prefix + '-month').value;
+  const jy = document.getElementById(prefix + '-year').value;
+  const previewEl = document.getElementById(previewId);
+  if(!jd || !jm || !jy){ previewEl.textContent = ''; return; }
+  const iso = jalaliToGregorianISO(parseInt(jy), parseInt(jm), parseInt(jd));
+  if(!iso){ previewEl.textContent = ''; return; }
+  const age = calcAgeFromISO(iso);
+  previewEl.textContent = age !== null ? `سن: ${toPersianDigits(age)} سال` : '';
 }
 let toastTimer;
 function showToast(text, isError){
@@ -1057,16 +1182,31 @@ async function openPatient(id){
   if(!p) return;
   document.getElementById('detail-avatar').textContent = initials(p.name);
   document.getElementById('detail-name').textContent = p.name;
-  document.getElementById('detail-meta').innerHTML = `<span>${p.age?toPersianDigits(p.age):'—'} ساله، ${p.gender||'—'}</span><span>— پرونده ${p.file_number}</span>${p.phone?`<span>· ${p.phone}</span>`:''}${p.insurance?`<span>· ${p.insurance}</span>`:''}<span>· ثبت‌شده در ${fmtDateOnly(p.created_at)}</span>`;
+  document.getElementById('detail-meta').innerHTML = `<span>${p.age!=null?toPersianDigits(p.age):'—'} ساله، ${p.gender||'—'}</span><span>— پرونده ${p.file_number}</span>${p.phone?`<span>· ${p.phone}</span>`:''}<span>· ثبت‌شده در ${fmtDateOnly(p.created_at)}</span>`;
   document.getElementById('field-nationalid').value = p.national_id || '';
   document.getElementById('field-phone').value = p.phone || '';
-  document.getElementById('field-insurance').value = p.insurance || '';
   document.getElementById('field-job').value = p.job || '';
   document.getElementById('field-address').value = p.address || '';
   document.getElementById('field-referrer').value = p.referrer || '';
+  populateBirthdateSelects('edit-birth');
+  if(p.birth_date){
+    const bd = new Date(p.birth_date + 'T00:00:00Z');
+    const j = gregorianToJalali(bd);
+    document.getElementById('edit-birth-day').value = j.jd;
+    document.getElementById('edit-birth-month').value = j.jm;
+    document.getElementById('edit-birth-year').value = j.jy;
+  } else {
+    document.getElementById('edit-birth-day').value = '';
+    document.getElementById('edit-birth-month').value = '';
+    document.getElementById('edit-birth-year').value = '';
+  }
+  updateAgePreview('edit-birth', 'edit-age-preview');
+  ['edit-birth-day','edit-birth-month','edit-birth-year'].forEach(id => {
+    document.getElementById(id).onchange = () => updateAgePreview('edit-birth', 'edit-age-preview');
+  });
   visitsShownCount = 8;
   commentsShownCount = 15;
-  historyShownCount = 15; diagnosisShownCount = 15; nutritionShownCount = 15;
+  allRecordTypes.forEach(t => recordShownCounts[t] = 15);
   renderVisitTimeline(p);
   applyAccessControl();
   navigate('detail');
@@ -1097,14 +1237,20 @@ function loadMoreVisits(){
 function refreshDetailIfOpen(){ if(document.getElementById('view-detail').style.display !== 'none') openPatient(activePatientId); }
 
 async function saveRecord(){
+  const jd = document.getElementById('edit-birth-day').value;
+  const jm = document.getElementById('edit-birth-month').value;
+  const jy = document.getElementById('edit-birth-year').value;
   const payload = {
     national_id: document.getElementById('field-nationalid').value,
     phone: document.getElementById('field-phone').value,
-    insurance: document.getElementById('field-insurance').value,
     job: document.getElementById('field-job').value,
     address: document.getElementById('field-address').value,
     referrer: document.getElementById('field-referrer').value,
   };
+  if(jd && jm && jy){
+    payload.birth_date = jalaliToGregorianISO(parseInt(jy), parseInt(jm), parseInt(jd));
+    payload.age = calcAgeFromISO(payload.birth_date);
+  }
   const { error } = await sb.from('patients').update(payload).eq('id', activePatientId);
   if(error){ showToast('خطا در ذخیره‌سازی', true); return; }
   showToast('اطلاعات تماس ذخیره شد');
@@ -1137,6 +1283,86 @@ async function deletePatient(){
   await loadPatients();
   navigate('list');
   renderList();
+}
+
+/* ================= PDF export ================= */
+function pdfLogSection(title, entries){
+  if(!entries || entries.length === 0) return '';
+  const rows = entries.slice().reverse().map(e => {
+    const author = profilesById[e.author_id || e.created_by];
+    return `<div class="pdf-entry">
+      <div class="pdf-entry-head"><span>${fmtTime(e.created_at)}</span><span>${author ? author.full_name : ''}</span></div>
+      <div class="pdf-entry-text">${e.content || e.note || e.message}</div>
+    </div>`;
+  }).join('');
+  return `<div class="pdf-section"><h3>${title}</h3>${rows}</div>`;
+}
+
+async function downloadPatientPDF(){
+  const p = patients.find(x => x.id === activePatientId);
+  if(!p) return;
+  const btn = document.getElementById('pdf-download-btn');
+  btn.disabled = true; btn.textContent = 'در حال آماده‌سازی…';
+
+  // مطمئن می‌شویم آخرین دیتای کامنت‌ها و رکوردها لود شده باشد
+  await loadPatientRecords(p.id);
+  await loadComments(p.id);
+
+  const genderLabel = p.gender || '—';
+  const ageLabel = p.age != null ? `${toPersianDigits(p.age)} ساله` : '';
+  const birthLabel = p.birth_date ? fmtDateOnly(new Date(p.birth_date + 'T00:00:00Z').toISOString()) : '';
+
+  const checkboxSections = checkboxGatedTypes.map(t => p['has_' + t] ? pdfLogSection(recordTypeLabels[t], patientRecordsCache[t]) : '').join('');
+
+  const container = document.createElement('div');
+  container.className = 'pdf-export-root';
+  container.innerHTML = `
+    <div class="pdf-header">
+      <h1>${p.name}</h1>
+      <div class="pdf-header-meta">پرونده ${p.file_number} · ${genderLabel}${ageLabel ? ' · ' + ageLabel : ''}${birthLabel ? ' · تولد: ' + birthLabel : ''}</div>
+      <div class="pdf-header-meta">${p.phone ? 'تماس: ' + p.phone + ' · ' : ''}${p.national_id ? 'کد ملی: ' + p.national_id + ' · ' : ''}${p.job ? 'شغل: ' + p.job : ''}</div>
+      ${p.address ? `<div class="pdf-header-meta">آدرس: ${p.address}</div>` : ''}
+      ${p.referrer ? `<div class="pdf-header-meta">ارجاع‌دهنده: ${p.referrer}</div>` : ''}
+      <div class="pdf-header-meta">تاریخ خروجی: ${fmtTime(new Date().toISOString())}</div>
+    </div>
+    ${pdfLogSection('شرح حال', patientRecordsCache.history)}
+    ${pdfLogSection('تشخیص و درمان', patientRecordsCache.diagnosis)}
+    ${pdfLogSection('یادداشت تغذیه', patientRecordsCache.nutrition)}
+    ${checkboxSections}
+    ${pdfLogSection('تاریخچه ویزیت‌ها', p.visits)}
+    ${pdfLogSection('یادداشت‌های پرونده', allCommentsCache)}
+  `;
+
+  const style = document.createElement('style');
+  style.textContent = `
+    .pdf-export-root{ font-family:'Vazirmatn', Tahoma, sans-serif; direction:rtl; color:#26332E; padding:24px; width:700px; }
+    .pdf-header h1{ font-size:22px; margin-bottom:6px; }
+    .pdf-header-meta{ font-size:12.5px; color:#5C6B65; margin-bottom:3px; }
+    .pdf-section{ margin-top:20px; padding-top:14px; border-top:1px solid #E2EAE7; }
+    .pdf-section h3{ font-size:15px; margin-bottom:10px; color:#1F4E45; }
+    .pdf-entry{ margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid #EEF4F2; }
+    .pdf-entry-head{ display:flex; justify-content:space-between; font-size:11px; color:#93A39C; margin-bottom:3px; }
+    .pdf-entry-text{ font-size:13px; line-height:1.7; }
+  `;
+  container.prepend(style);
+  document.body.appendChild(container);
+
+  try{
+    await html2pdf().set({
+      margin: 10,
+      filename: `پرونده-${p.file_number}-${p.name}.pdf`,
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
+    }).from(container).save();
+    showToast('فایل PDF دانلود شد');
+  } catch(err){
+    showToast('خطا در ساخت PDF', true);
+  } finally {
+    document.body.removeChild(container);
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>دانلود PDF';
+  }
 }
 
 /* ---- Per-patient notes (comments) ---- */
@@ -1194,27 +1420,41 @@ async function sendComment(){
 }
 
 /* ---- Patient records log (history / diagnosis / nutrition) ---- */
-let patientRecordsCache = { history: [], diagnosis: [], nutrition: [] };
-const recordTypeLabels = { history: 'شرح حال', diagnosis: 'تشخیص و درمان', nutrition: 'یادداشت تغذیه' };
-const recordShownCounters = { history: 'historyShownCount', diagnosis: 'diagnosisShownCount', nutrition: 'nutritionShownCount' };
+const allRecordTypes = ['history','diagnosis','nutrition','past_illness','medications','family_history','allergy'];
+const checkboxGatedTypes = ['past_illness','medications','family_history','allergy'];
+let patientRecordsCache = { history: [], diagnosis: [], nutrition: [], past_illness: [], medications: [], family_history: [], allergy: [] };
+const recordTypeLabels = { history: 'شرح حال', diagnosis: 'تشخیص و درمان', nutrition: 'یادداشت تغذیه', past_illness: 'سابقه بیماری‌های قبلی', medications: 'داروهای مصرفی', family_history: 'سابقه خانوادگی', allergy: 'آلرژی' };
+let recordShownCounts = { history: 15, diagnosis: 15, nutrition: 15, past_illness: 15, medications: 15, family_history: 15, allergy: 15 };
 
 async function loadPatientRecords(patientId){
   const { data } = await sb.from('patient_records').select('*').eq('patient_id', patientId).order('created_at', {ascending:false});
   const all = data || [];
-  patientRecordsCache = {
-    history: all.filter(r => r.record_type === 'history'),
-    diagnosis: all.filter(r => r.record_type === 'diagnosis'),
-    nutrition: all.filter(r => r.record_type === 'nutrition'),
-  };
-  renderRecordLog('history');
-  renderRecordLog('diagnosis');
-  renderRecordLog('nutrition');
+  allRecordTypes.forEach(t => { patientRecordsCache[t] = all.filter(r => r.record_type === t); });
+  allRecordTypes.forEach(t => renderRecordLog(t));
+
+  // sync checkbox states from the patient row
+  const p = patients.find(x => x.id === patientId);
+  if(p){
+    checkboxGatedTypes.forEach(t => {
+      const checked = !!p['has_' + t];
+      document.getElementById('chk-' + t).checked = checked;
+      document.getElementById('section-' + t).style.display = checked ? 'block' : 'none';
+    });
+  }
+}
+
+async function toggleCheckboxField(type){
+  const checked = document.getElementById('chk-' + type).checked;
+  document.getElementById('section-' + type).style.display = checked ? 'block' : 'none';
+  const { error } = await sb.from('patients').update({ ['has_' + type]: checked }).eq('id', activePatientId);
+  if(error){ showToast('خطا در ذخیره‌سازی', true); return; }
+  await loadPatients();
 }
 
 function renderRecordLog(type){
   const el = document.getElementById('log-' + type);
   const list = patientRecordsCache[type] || [];
-  const shownCount = window[recordShownCounters[type]];
+  const shownCount = recordShownCounts[type];
   if(list.length === 0){ el.innerHTML = `<div class="visit-entry"><div class="visit-note" style="color:var(--ink-faint)">هنوز موردی برای ${recordTypeLabels[type]} ثبت نشده.</div></div>`; return; }
   const visible = list.slice(0, shownCount);
   let html = visible.map(r => {
@@ -1247,7 +1487,7 @@ function renderRecordLog(type){
 }
 
 function loadMoreRecords(type){
-  window[recordShownCounters[type]] += 15;
+  recordShownCounts[type] += 15;
   renderRecordLog(type);
 }
 
@@ -1381,37 +1621,48 @@ function toggleAutoFile(){
 }
 function openNewPatientModal(){
   document.getElementById('modal-backdrop').classList.add('show');
-  ['new-name','new-age','new-phone','new-nationalid','new-insurance','new-job','new-referrer','new-address','new-history'].forEach(id=>document.getElementById(id).value='');
+  ['new-name','new-phone','new-nationalid','new-job','new-referrer','new-address','new-history'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('new-filenum-auto').checked = true;
   document.getElementById('new-filenum').value = nextFileNumber();
   document.getElementById('new-filenum').disabled = true;
   document.getElementById('err-name').classList.remove('show');
-  document.getElementById('err-age').classList.remove('show');
+  document.getElementById('err-birthdate').classList.remove('show');
+  populateBirthdateSelects('new-birth');
+  document.getElementById('new-birth-day').value = '';
+  document.getElementById('new-birth-month').value = '';
+  document.getElementById('new-birth-year').value = '';
+  document.getElementById('new-age-preview').textContent = '';
+  ['new-birth-day','new-birth-month','new-birth-year'].forEach(id => {
+    document.getElementById(id).onchange = () => updateAgePreview('new-birth', 'new-age-preview');
+  });
 }
 async function createPatient(){
   const name = document.getElementById('new-name').value.trim();
-  const age = document.getElementById('new-age').value.trim();
+  const jd = document.getElementById('new-birth-day').value;
+  const jm = document.getElementById('new-birth-month').value;
+  const jy = document.getElementById('new-birth-year').value;
   let valid = true;
   if(!name){ document.getElementById('err-name').classList.add('show'); valid=false; } else document.getElementById('err-name').classList.remove('show');
-  if(!age || isNaN(age) || Number(age)<=0 || Number(age)>120){ document.getElementById('err-age').classList.add('show'); valid=false; } else document.getElementById('err-age').classList.remove('show');
+  if(!jd || !jm || !jy){ document.getElementById('err-birthdate').classList.add('show'); valid=false; } else document.getElementById('err-birthdate').classList.remove('show');
   if(!valid) return;
+  const birthISO = jalaliToGregorianISO(parseInt(jy), parseInt(jm), parseInt(jd));
+  const age = calcAgeFromISO(birthISO);
   const btn = document.getElementById('create-patient-btn');
   btn.disabled = true; btn.textContent = 'در حال ثبت…';
   const fileNum = document.getElementById('new-filenum').value.trim() || nextFileNumber();
   const history = document.getElementById('new-history').value.trim();
   const { data, error } = await sb.from('patients').insert({
-    file_number: fileNum, name, age: Number(age), gender: document.getElementById('new-gender').value,
+    file_number: fileNum, name, age, birth_date: birthISO, gender: document.getElementById('new-gender').value,
     national_id: document.getElementById('new-nationalid').value.trim(),
     phone: document.getElementById('new-phone').value.trim(),
-    insurance: document.getElementById('new-insurance').value.trim(),
     job: document.getElementById('new-job').value.trim(),
     address: document.getElementById('new-address').value.trim(),
     referrer: document.getElementById('new-referrer').value.trim(),
-    history: history || null, updated_by: currentProfile.id,
+    updated_by: currentProfile.id,
   }).select().single();
   btn.disabled = false; btn.textContent = 'ثبت پرونده';
   if(error){ showToast('خطا در ثبت پرونده — شاید شماره‌ی پرونده تکراری است', true); return; }
-  if(history) await sb.from('visits').insert({ patient_id: data.id, note: 'مراجعه اولیه.', created_by: currentProfile.id });
+  if(history) await sb.from('patient_records').insert({ patient_id: data.id, record_type: 'history', content: history, author_id: currentProfile.id });
   closeModal('modal-backdrop');
   await loadPatients();
   renderList();
