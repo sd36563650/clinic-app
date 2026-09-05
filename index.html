@@ -259,6 +259,11 @@
   .field-input-modal:focus{ border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
   .checkbox-gate-label{ display:flex; align-items:center; gap:9px; cursor:pointer; font-size:14.5px; font-weight:700; color:var(--ink); }
   .checkbox-gate-label input{ width:18px; height:18px; accent-color: var(--accent); cursor:pointer; }
+  .ltr-input{ direction:ltr; text-align:left; }
+  .ltr-content{ direction:ltr; text-align:left; }
+  .ltr-content .visit-head{ flex-direction:row; }
+  .ltr-content .entry-actions{ margin-right:0; margin-left:auto; }
+  .ltr-content .entry-edit-row{ direction:ltr; }
   .birthdate-row{ display:grid; grid-template-columns: 1fr 1.4fr 1fr; gap:8px; }
   .age-preview{ font-size:12px; color:var(--accent-dark); margin-top:6px; font-weight:600; }
   .error-text{ font-size:12px; color:var(--danger); margin-top:5px; display:none; }
@@ -475,63 +480,86 @@
               <button class="btn btn-primary btn-sm" style="margin-top:14px;" onclick="saveRecord()">ذخیره اطلاعات تماس</button>
             </div>
             <div class="panel">
-              <div class="panel-title">شرح حال</div>
-              <div class="visit-timeline" id="log-history"></div>
+              <div class="panel-title">History</div>
+              <div class="visit-timeline ltr-content" id="log-history"></div>
               <div class="action-row" style="margin-top:14px;">
-                <input class="field-input" id="input-history" placeholder="مورد جدید به شرح حال اضافه کن…" onkeydown="if(event.key==='Enter') addRecordEntry('history')">
-                <button class="btn btn-primary" style="white-space:nowrap;" onclick="addRecordEntry('history')">ثبت</button>
+                <input class="field-input ltr-input" id="input-history" placeholder="Add a new entry to history…" onkeydown="if(event.key==='Enter') addRecordEntry('history')">
+                <button class="btn btn-primary" style="white-space:nowrap;" onclick="addRecordEntry('history')">Add</button>
               </div>
             </div>
 
             <div class="panel checkbox-gated-panel" data-field="past_illness">
-              <div class="panel-title"><label class="checkbox-gate-label"><input type="checkbox" id="chk-past_illness" onchange="toggleCheckboxField('past_illness')"> سابقه بیماری‌های قبلی</label></div>
+              <div class="panel-title"><label class="checkbox-gate-label"><input type="checkbox" id="chk-past_illness" onchange="toggleCheckboxField('past_illness')"> Past Medical History</label></div>
               <div id="section-past_illness" style="display:none;">
-                <div class="visit-timeline" id="log-past_illness"></div>
+                <div class="visit-timeline ltr-content" id="log-past_illness"></div>
                 <div class="action-row" style="margin-top:14px;">
-                  <input class="field-input" id="input-past_illness" placeholder="مورد جدید اضافه کن…" onkeydown="if(event.key==='Enter') addRecordEntry('past_illness')">
-                  <button class="btn btn-primary" style="white-space:nowrap;" onclick="addRecordEntry('past_illness')">ثبت</button>
+                  <input class="field-input ltr-input" id="input-past_illness" placeholder="Add a new entry…" onkeydown="if(event.key==='Enter') addRecordEntry('past_illness')">
+                  <button class="btn btn-primary" style="white-space:nowrap;" onclick="addRecordEntry('past_illness')">Add</button>
                 </div>
               </div>
             </div>
 
             <div class="panel checkbox-gated-panel" data-field="medications">
-              <div class="panel-title"><label class="checkbox-gate-label"><input type="checkbox" id="chk-medications" onchange="toggleCheckboxField('medications')"> داروهای مصرفی</label></div>
+              <div class="panel-title"><label class="checkbox-gate-label"><input type="checkbox" id="chk-medications" onchange="toggleCheckboxField('medications')"> Drug History</label></div>
               <div id="section-medications" style="display:none;">
-                <div class="visit-timeline" id="log-medications"></div>
+                <div class="visit-timeline ltr-content" id="log-medications"></div>
                 <div class="action-row" style="margin-top:14px;">
-                  <input class="field-input" id="input-medications" placeholder="مورد جدید اضافه کن…" onkeydown="if(event.key==='Enter') addRecordEntry('medications')">
-                  <button class="btn btn-primary" style="white-space:nowrap;" onclick="addRecordEntry('medications')">ثبت</button>
+                  <input class="field-input ltr-input" id="input-medications" placeholder="Add a new entry…" onkeydown="if(event.key==='Enter') addRecordEntry('medications')">
+                  <button class="btn btn-primary" style="white-space:nowrap;" onclick="addRecordEntry('medications')">Add</button>
                 </div>
               </div>
             </div>
 
             <div class="panel checkbox-gated-panel" data-field="family_history">
-              <div class="panel-title"><label class="checkbox-gate-label"><input type="checkbox" id="chk-family_history" onchange="toggleCheckboxField('family_history')"> سابقه خانوادگی</label></div>
+              <div class="panel-title"><label class="checkbox-gate-label"><input type="checkbox" id="chk-family_history" onchange="toggleCheckboxField('family_history')"> Family History</label></div>
               <div id="section-family_history" style="display:none;">
-                <div class="visit-timeline" id="log-family_history"></div>
+                <div class="visit-timeline ltr-content" id="log-family_history"></div>
                 <div class="action-row" style="margin-top:14px;">
-                  <input class="field-input" id="input-family_history" placeholder="مورد جدید اضافه کن…" onkeydown="if(event.key==='Enter') addRecordEntry('family_history')">
-                  <button class="btn btn-primary" style="white-space:nowrap;" onclick="addRecordEntry('family_history')">ثبت</button>
+                  <input class="field-input ltr-input" id="input-family_history" placeholder="Add a new entry…" onkeydown="if(event.key==='Enter') addRecordEntry('family_history')">
+                  <button class="btn btn-primary" style="white-space:nowrap;" onclick="addRecordEntry('family_history')">Add</button>
                 </div>
               </div>
             </div>
 
             <div class="panel checkbox-gated-panel" data-field="allergy">
-              <div class="panel-title"><label class="checkbox-gate-label"><input type="checkbox" id="chk-allergy" onchange="toggleCheckboxField('allergy')"> آلرژی</label></div>
+              <div class="panel-title"><label class="checkbox-gate-label"><input type="checkbox" id="chk-allergy" onchange="toggleCheckboxField('allergy')"> Allergy</label></div>
               <div id="section-allergy" style="display:none;">
-                <div class="visit-timeline" id="log-allergy"></div>
+                <div class="visit-timeline ltr-content" id="log-allergy"></div>
                 <div class="action-row" style="margin-top:14px;">
-                  <input class="field-input" id="input-allergy" placeholder="مورد جدید اضافه کن…" onkeydown="if(event.key==='Enter') addRecordEntry('allergy')">
-                  <button class="btn btn-primary" style="white-space:nowrap;" onclick="addRecordEntry('allergy')">ثبت</button>
+                  <input class="field-input ltr-input" id="input-allergy" placeholder="Add a new entry…" onkeydown="if(event.key==='Enter') addRecordEntry('allergy')">
+                  <button class="btn btn-primary" style="white-space:nowrap;" onclick="addRecordEntry('allergy')">Add</button>
                 </div>
               </div>
             </div>
+
+            <div class="panel checkbox-gated-panel" data-field="smoking">
+              <div class="panel-title"><label class="checkbox-gate-label"><input type="checkbox" id="chk-smoking" onchange="toggleCheckboxField('smoking')"> Smoking</label></div>
+              <div id="section-smoking" style="display:none;">
+                <div class="visit-timeline ltr-content" id="log-smoking"></div>
+                <div class="action-row" style="margin-top:14px;">
+                  <input class="field-input ltr-input" id="input-smoking" placeholder="Add a new entry…" onkeydown="if(event.key==='Enter') addRecordEntry('smoking')">
+                  <button class="btn btn-primary" style="white-space:nowrap;" onclick="addRecordEntry('smoking')">Add</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel checkbox-gated-panel" data-field="alcohol">
+              <div class="panel-title"><label class="checkbox-gate-label"><input type="checkbox" id="chk-alcohol" onchange="toggleCheckboxField('alcohol')"> Alcohol</label></div>
+              <div id="section-alcohol" style="display:none;">
+                <div class="visit-timeline ltr-content" id="log-alcohol"></div>
+                <div class="action-row" style="margin-top:14px;">
+                  <input class="field-input ltr-input" id="input-alcohol" placeholder="Add a new entry…" onkeydown="if(event.key==='Enter') addRecordEntry('alcohol')">
+                  <button class="btn btn-primary" style="white-space:nowrap;" onclick="addRecordEntry('alcohol')">Add</button>
+                </div>
+              </div>
+            </div>
+
             <div class="panel">
-              <div class="panel-title"><span>تشخیص و درمان</span><span class="lock-badge" id="dx-lock-badge" style="display:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>فقط دکتر</span></div>
-              <div class="visit-timeline" id="log-diagnosis"></div>
+              <div class="panel-title"><span>Diagnosis &amp; Treatment</span><span class="lock-badge" id="dx-lock-badge" style="display:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Doctor only</span></div>
+              <div class="visit-timeline ltr-content" id="log-diagnosis"></div>
               <div class="action-row" style="margin-top:14px;" id="diagnosis-input-row">
-                <input class="field-input" id="input-diagnosis" placeholder="مورد جدید به تشخیص و درمان اضافه کن…" onkeydown="if(event.key==='Enter') addRecordEntry('diagnosis')">
-                <button class="btn btn-primary" style="white-space:nowrap;" onclick="addRecordEntry('diagnosis')">ثبت</button>
+                <input class="field-input ltr-input" id="input-diagnosis" placeholder="Add a new entry to diagnosis…" onkeydown="if(event.key==='Enter') addRecordEntry('diagnosis')">
+                <button class="btn btn-primary" style="white-space:nowrap;" onclick="addRecordEntry('diagnosis')">Add</button>
               </div>
             </div>
             <div class="panel">
@@ -1420,11 +1448,11 @@ async function sendComment(){
 }
 
 /* ---- Patient records log (history / diagnosis / nutrition) ---- */
-const allRecordTypes = ['history','diagnosis','nutrition','past_illness','medications','family_history','allergy'];
-const checkboxGatedTypes = ['past_illness','medications','family_history','allergy'];
-let patientRecordsCache = { history: [], diagnosis: [], nutrition: [], past_illness: [], medications: [], family_history: [], allergy: [] };
-const recordTypeLabels = { history: 'شرح حال', diagnosis: 'تشخیص و درمان', nutrition: 'یادداشت تغذیه', past_illness: 'سابقه بیماری‌های قبلی', medications: 'داروهای مصرفی', family_history: 'سابقه خانوادگی', allergy: 'آلرژی' };
-let recordShownCounts = { history: 15, diagnosis: 15, nutrition: 15, past_illness: 15, medications: 15, family_history: 15, allergy: 15 };
+const allRecordTypes = ['history','diagnosis','nutrition','past_illness','medications','family_history','allergy','smoking','alcohol'];
+const checkboxGatedTypes = ['past_illness','medications','family_history','allergy','smoking','alcohol'];
+let patientRecordsCache = { history: [], diagnosis: [], nutrition: [], past_illness: [], medications: [], family_history: [], allergy: [], smoking: [], alcohol: [] };
+const recordTypeLabels = { history: 'History', diagnosis: 'Diagnosis & Treatment', nutrition: 'یادداشت تغذیه', past_illness: 'Past Medical History', medications: 'Drug History', family_history: 'Family History', allergy: 'Allergy', smoking: 'Smoking', alcohol: 'Alcohol' };
+let recordShownCounts = { history: 15, diagnosis: 15, nutrition: 15, past_illness: 15, medications: 15, family_history: 15, allergy: 15, smoking: 15, alcohol: 15 };
 
 async function loadPatientRecords(patientId){
   const { data } = await sb.from('patient_records').select('*').eq('patient_id', patientId).order('created_at', {ascending:false});
