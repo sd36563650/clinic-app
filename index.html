@@ -264,6 +264,22 @@
   .ltr-content .visit-head{ flex-direction:row; }
   .ltr-content .entry-actions{ margin-right:0; margin-left:auto; }
   .ltr-content .entry-edit-row{ direction:ltr; }
+  .lab-form-grid{ direction:ltr; }
+  .lab-chart-controls{ display:flex; align-items:center; gap:10px; margin-top:20px; }
+  .lab-chart-wrap{ margin-top:12px; background:var(--surface-2); border-radius:var(--radius-sm); padding:12px; }
+  .lab-chart-wrap svg{ width:100%; height:auto; display:block; }
+  .lab-table-wrap{ margin-top:16px; overflow-x:auto; }
+  .lab-table{ width:100%; border-collapse:collapse; font-size:13px; direction:ltr; text-align:left; }
+  .lab-table th{ font-size:11.5px; color:var(--ink-faint); font-weight:700; text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  .lab-table td{ padding:9px 10px; border-bottom:1px solid var(--line); color:var(--ink); }
+  .lab-table tr:last-child td{ border-bottom:none; }
+  .lab-table .lab-del-btn{ background:none; border:none; cursor:pointer; color:var(--ink-faint); padding:2px; display:flex; }
+  .lab-table .lab-del-btn:hover{ color:var(--danger); }
+  .attachment-item{ display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); }
+  .attachment-item:last-child{ border-bottom:none; }
+  .attachment-icon{ width:34px;height:34px;border-radius:9px; background:var(--surface-2); display:flex;align-items:center;justify-content:center; color:var(--accent-dark); flex-shrink:0; }
+  .attachment-name{ font-size:13.5px; font-weight:600; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .attachment-meta{ font-size:11.5px; color:var(--ink-faint); }
   .birthdate-row{ display:grid; grid-template-columns: 1fr 1.4fr 1fr; gap:8px; }
   .age-preview{ font-size:12px; color:var(--accent-dark); margin-top:6px; font-weight:600; }
   .error-text{ font-size:12px; color:var(--danger); margin-top:5px; display:none; }
@@ -554,6 +570,50 @@
               </div>
             </div>
 
+            <div class="panel checkbox-gated-panel" data-field="exercise">
+              <div class="panel-title"><label class="checkbox-gate-label"><input type="checkbox" id="chk-exercise" onchange="toggleCheckboxField('exercise')"> Exercise</label></div>
+              <div id="section-exercise" style="display:none;">
+                <div class="visit-timeline ltr-content" id="log-exercise"></div>
+                <div class="action-row" style="margin-top:14px;">
+                  <input class="field-input ltr-input" id="input-exercise" placeholder="Add a new entry…" onkeydown="if(event.key==='Enter') addRecordEntry('exercise')">
+                  <button class="btn btn-primary" style="white-space:nowrap;" onclick="addRecordEntry('exercise')">Add</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel checkbox-gated-panel" data-field="weight">
+              <div class="panel-title"><label class="checkbox-gate-label"><input type="checkbox" id="chk-weight" onchange="toggleCheckboxField('weight')"> Weight</label></div>
+              <div id="section-weight" style="display:none;">
+                <div class="visit-timeline ltr-content" id="log-weight"></div>
+                <div class="action-row" style="margin-top:14px;">
+                  <input class="field-input ltr-input" id="input-weight" placeholder="Add a new entry…" onkeydown="if(event.key==='Enter') addRecordEntry('weight')">
+                  <button class="btn btn-primary" style="white-space:nowrap;" onclick="addRecordEntry('weight')">Add</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel checkbox-gated-panel" data-field="physical_exam">
+              <div class="panel-title"><label class="checkbox-gate-label"><input type="checkbox" id="chk-physical_exam" onchange="toggleCheckboxField('physical_exam')"> Physical Exam &amp; Plan</label></div>
+              <div id="section-physical_exam" style="display:none;">
+                <div class="visit-timeline ltr-content" id="log-physical_exam"></div>
+                <div class="action-row" style="margin-top:14px;">
+                  <input class="field-input ltr-input" id="input-physical_exam" placeholder="Add a new entry…" onkeydown="if(event.key==='Enter') addRecordEntry('physical_exam')">
+                  <button class="btn btn-primary" style="white-space:nowrap;" onclick="addRecordEntry('physical_exam')">Add</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel checkbox-gated-panel" data-field="diet">
+              <div class="panel-title"><label class="checkbox-gate-label"><input type="checkbox" id="chk-diet" onchange="toggleCheckboxField('diet')"> Diet</label></div>
+              <div id="section-diet" style="display:none;">
+                <div class="visit-timeline ltr-content" id="log-diet"></div>
+                <div class="action-row" style="margin-top:14px;">
+                  <input class="field-input ltr-input" id="input-diet" placeholder="Add a new entry…" onkeydown="if(event.key==='Enter') addRecordEntry('diet')">
+                  <button class="btn btn-primary" style="white-space:nowrap;" onclick="addRecordEntry('diet')">Add</button>
+                </div>
+              </div>
+            </div>
+
             <div class="panel">
               <div class="panel-title"><span>Diagnosis &amp; Treatment</span><span class="lock-badge" id="dx-lock-badge" style="display:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Doctor only</span></div>
               <div class="visit-timeline ltr-content" id="log-diagnosis"></div>
@@ -584,6 +644,48 @@
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Lab Trends -->
+        <div class="panel" style="margin-top:16px;">
+          <div class="panel-title">Lab Trends</div>
+          <div class="field-grid-2 lab-form-grid">
+            <div class="field-group"><div class="field-label">Test name</div><input class="field-input ltr-input" id="lab-test-name" placeholder="e.g. FBS, HbA1c, TSH"></div>
+            <div class="field-group"><div class="field-label">Value</div><input class="field-input ltr-input" id="lab-test-value" placeholder="e.g. 98" inputmode="decimal"></div>
+            <div class="field-group"><div class="field-label">Unit (optional)</div><input class="field-input ltr-input" id="lab-test-unit" placeholder="e.g. mg/dL"></div>
+            <div class="field-group"><div class="field-label">تاریخ آزمایش (شمسی)</div>
+              <div class="birthdate-row">
+                <select class="field-input" id="lab-date-day"></select>
+                <select class="field-input" id="lab-date-month"></select>
+                <select class="field-input" id="lab-date-year"></select>
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm" style="margin-top:12px;" onclick="addLabResult()">Add lab result</button>
+
+          <div class="lab-chart-controls">
+            <span class="field-label" style="margin-bottom:0;">Show trend for:</span>
+            <select class="sort-select" id="lab-chart-select" onchange="renderLabChart()"></select>
+          </div>
+          <div class="lab-chart-wrap" id="lab-chart-wrap" style="display:none;">
+            <svg id="lab-chart-svg" viewBox="0 0 600 220" preserveAspectRatio="xMidYMid meet"></svg>
+          </div>
+
+          <div class="lab-table-wrap">
+            <table class="lab-table" id="lab-results-table"></table>
+          </div>
+        </div>
+
+        <!-- Attachments -->
+        <div class="panel" style="margin-top:16px;">
+          <div class="panel-title">Attachments <span class="optional-tag">عکس، PDF، ورد و غیره</span></div>
+          <input type="file" id="attachment-file-input" style="display:none;" onchange="uploadAttachment()">
+          <button class="btn btn-primary btn-sm" onclick="document.getElementById('attachment-file-input').click()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+            آپلود فایل جدید
+          </button>
+          <div id="attachment-upload-status" style="display:none;" class="loading-state">در حال آپلود…</div>
+          <div id="attachments-list" style="margin-top:14px;"></div>
         </div>
       </section>
 
@@ -1029,6 +1131,18 @@ function subscribeRealtime(){
       if(activePatientId === pid) loadPatientRecords(activePatientId);
     }).subscribe();
 
+  sb.channel('lab-changes')
+    .on('postgres_changes', {event:'*', schema:'public', table:'lab_results'}, payload => {
+      const pid = (payload.new && payload.new.patient_id) || (payload.old && payload.old.patient_id);
+      if(activePatientId === pid) loadLabResults(activePatientId);
+    }).subscribe();
+
+  sb.channel('attachment-changes')
+    .on('postgres_changes', {event:'*', schema:'public', table:'patient_attachments'}, payload => {
+      const pid = (payload.new && payload.new.patient_id) || (payload.old && payload.old.patient_id);
+      if(activePatientId === pid) loadAttachments(activePatientId);
+    }).subscribe();
+
   sb.channel('general-changes')
     .on('postgres_changes', {event:'INSERT', schema:'public', table:'general_messages'}, payload => {
       generalMessages.push(payload.new);
@@ -1240,6 +1354,13 @@ async function openPatient(id){
   navigate('detail');
   loadComments(id);
   loadPatientRecords(id);
+  populateBirthdateSelects('lab-date');
+  const todayJ = gregorianToJalali(new Date());
+  document.getElementById('lab-date-day').value = todayJ.jd;
+  document.getElementById('lab-date-month').value = todayJ.jm;
+  document.getElementById('lab-date-year').value = todayJ.jy;
+  loadLabResults(id);
+  loadAttachments(id);
 }
 
 function renderVisitTimeline(p){
@@ -1249,7 +1370,14 @@ function renderVisitTimeline(p){
   const visible = sorted.slice(0, visitsShownCount);
   let html = visible.map(v => {
     const author = profilesById[v.created_by];
-    return `<div class="visit-entry"><div class="visit-head"><span class="visit-date">${fmtTime(v.created_at)}</span><span class="visit-author">${author ? author.full_name : 'نامشخص'}</span></div><div class="visit-note">${v.note}</div></div>`;
+    return `<div class="visit-entry">
+      <div class="visit-head">
+        <span class="visit-date">${fmtTime(v.created_at)}</span>
+        <span class="visit-author">${author ? author.full_name : 'نامشخص'}</span>
+        <div class="entry-actions"><button class="entry-action-btn danger" title="حذف" onclick="deleteVisitEntry('${v.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg></button></div>
+      </div>
+      <div class="visit-note">${v.note}</div>
+    </div>`;
   }).join('');
   if(sorted.length > visitsShownCount){
     html += `<button class="load-more-btn" onclick="loadMoreVisits()">نمایش ${toPersianDigits(Math.min(8, sorted.length - visitsShownCount))} ویزیت قبلی دیگر (از ${toPersianDigits(sorted.length)} ویزیت)</button>`;
@@ -1261,8 +1389,176 @@ function loadMoreVisits(){
   const p = patients.find(x => x.id === activePatientId);
   if(p) renderVisitTimeline(p);
 }
+async function deleteVisitEntry(visitId){
+  const ok = confirm('این ویزیت برای همیشه حذف شود؟');
+  if(!ok) return;
+  const { error } = await sb.from('visits').delete().eq('id', visitId);
+  if(error){ showToast('خطا در حذف', true); return; }
+  await loadPatients();
+  const p = patients.find(x => x.id === activePatientId);
+  if(p) renderVisitTimeline(p);
+  showToast('ویزیت حذف شد');
+}
 
 function refreshDetailIfOpen(){ if(document.getElementById('view-detail').style.display !== 'none') openPatient(activePatientId); }
+
+/* ================= Lab Trends ================= */
+let labResultsCache = [];
+async function loadLabResults(patientId){
+  const { data } = await sb.from('lab_results').select('*').eq('patient_id', patientId).order('test_date', {ascending:true});
+  labResultsCache = data || [];
+  renderLabTable();
+  renderLabChartSelect();
+  renderLabChart();
+}
+async function addLabResult(){
+  const name = document.getElementById('lab-test-name').value.trim();
+  const value = document.getElementById('lab-test-value').value.trim();
+  const unit = document.getElementById('lab-test-unit').value.trim();
+  const jd = document.getElementById('lab-date-day').value;
+  const jm = document.getElementById('lab-date-month').value;
+  const jy = document.getElementById('lab-date-year').value;
+  if(!name || !value || isNaN(value) || !jd || !jm || !jy){ showToast('نام آزمایش، مقدار عددی، و تاریخ را کامل وارد کنید', true); return; }
+  const testDate = jalaliToGregorianISO(parseInt(jy), parseInt(jm), parseInt(jd));
+  const { error } = await sb.from('lab_results').insert({
+    patient_id: activePatientId, test_name: name, value: parseFloat(value), unit: unit || null,
+    test_date: testDate, author_id: currentProfile.id,
+  });
+  if(error){ showToast('خطا در ثبت آزمایش', true); return; }
+  document.getElementById('lab-test-name').value = '';
+  document.getElementById('lab-test-value').value = '';
+  document.getElementById('lab-test-unit').value = '';
+  await loadLabResults(activePatientId);
+  showToast('آزمایش ثبت شد');
+}
+async function deleteLabResult(id){
+  const ok = confirm('این آزمایش برای همیشه حذف شود؟');
+  if(!ok) return;
+  const { error } = await sb.from('lab_results').delete().eq('id', id);
+  if(error){ showToast('خطا در حذف', true); return; }
+  await loadLabResults(activePatientId);
+  showToast('آزمایش حذف شد');
+}
+function renderLabTable(){
+  const table = document.getElementById('lab-results-table');
+  if(labResultsCache.length === 0){ table.innerHTML = '<tr><td style="padding:14px 0; color:var(--ink-faint); border:none;">No lab results yet.</td></tr>'; return; }
+  const sorted = labResultsCache.slice().sort((a,b) => new Date(b.test_date) - new Date(a.test_date));
+  const rows = sorted.map(r => `
+    <tr>
+      <td>${fmtDateOnly(new Date(r.test_date + 'T00:00:00Z').toISOString())}</td>
+      <td>${r.test_name}</td>
+      <td>${toPersianDigits(r.value)}${r.unit ? ' ' + r.unit : ''}</td>
+      <td><button class="lab-del-btn" title="Delete" onclick="deleteLabResult('${r.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg></button></td>
+    </tr>`).join('');
+  table.innerHTML = `<thead><tr><th>Date</th><th>Test</th><th>Value</th><th></th></tr></thead><tbody>${rows}</tbody>`;
+}
+function renderLabChartSelect(){
+  const sel = document.getElementById('lab-chart-select');
+  const prevValue = sel.value;
+  const testNames = [...new Set(labResultsCache.map(r => r.test_name))];
+  sel.innerHTML = testNames.map(n => `<option value="${n}">${n}</option>`).join('');
+  if(testNames.includes(prevValue)) sel.value = prevValue;
+}
+function renderLabChart(){
+  const wrap = document.getElementById('lab-chart-wrap');
+  const svg = document.getElementById('lab-chart-svg');
+  const selectedTest = document.getElementById('lab-chart-select').value;
+  const points = labResultsCache.filter(r => r.test_name === selectedTest).sort((a,b) => new Date(a.test_date) - new Date(b.test_date));
+  if(!selectedTest || points.length === 0){ wrap.style.display = 'none'; svg.innerHTML=''; return; }
+  wrap.style.display = 'block';
+
+  const W = 600, H = 220, padL = 44, padR = 20, padT = 16, padB = 34;
+  const values = points.map(p => p.value);
+  let minV = Math.min(...values), maxV = Math.max(...values);
+  if(minV === maxV){ minV -= 1; maxV += 1; }
+  const rangeV = maxV - minV;
+  const x = (i) => padL + (i / Math.max(points.length - 1, 1)) * (W - padL - padR);
+  const y = (v) => padT + (1 - (v - minV) / rangeV) * (H - padT - padB);
+
+  const linePath = points.map((p,i) => `${i===0?'M':'L'} ${x(i).toFixed(1)} ${y(p.value).toFixed(1)}`).join(' ');
+  const gridLines = [0,0.25,0.5,0.75,1].map(t => {
+    const yy = padT + t * (H - padT - padB);
+    const val = (maxV - t * rangeV).toFixed(1);
+    return `<line x1="${padL}" y1="${yy}" x2="${W-padR}" y2="${yy}" stroke="var(--line)" stroke-width="1"/><text x="${padL-8}" y="${yy+3}" font-size="10" fill="var(--ink-faint)" text-anchor="end">${val}</text>`;
+  }).join('');
+  const dots = points.map((p,i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(p.value).toFixed(1)}" r="3.5" fill="var(--accent)"/>`).join('');
+  const labels = points.map((p,i) => {
+    if(points.length > 8 && i % Math.ceil(points.length/8) !== 0) return '';
+    const d = new Date(p.test_date + 'T00:00:00Z');
+    const label = d.toLocaleDateString('fa-IR', {timeZone:'Asia/Tehran', month:'short', day:'numeric'});
+    return `<text x="${x(i).toFixed(1)}" y="${H-10}" font-size="10" fill="var(--ink-faint)" text-anchor="middle">${label}</text>`;
+  }).join('');
+
+  svg.innerHTML = `${gridLines}<path d="${linePath}" fill="none" stroke="var(--accent)" stroke-width="2"/>${dots}${labels}`;
+}
+
+/* ================= Attachments ================= */
+let attachmentsCache = [];
+async function loadAttachments(patientId){
+  const { data } = await sb.from('patient_attachments').select('*').eq('patient_id', patientId).order('created_at', {ascending:false});
+  attachmentsCache = data || [];
+  renderAttachmentsList();
+}
+function fmtFileSize(bytes){
+  if(!bytes) return '';
+  if(bytes < 1024*1024) return toPersianDigits(Math.round(bytes/1024)) + ' KB';
+  return toPersianDigits((bytes/1024/1024).toFixed(1)) + ' MB';
+}
+function renderAttachmentsList(){
+  const el = document.getElementById('attachments-list');
+  if(attachmentsCache.length === 0){ el.innerHTML = '<div class="loading-state">هنوز فایلی پیوست نشده.</div>'; return; }
+  el.innerHTML = attachmentsCache.map(a => {
+    const uploader = profilesById[a.uploaded_by];
+    return `<div class="attachment-item">
+      <div class="attachment-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div>
+      <div style="flex:1; min-width:0;">
+        <div class="attachment-name">${a.file_name}</div>
+        <div class="attachment-meta">${fmtFileSize(a.file_size)}${uploader ? ' · ' + uploader.full_name : ''} · ${fmtDateOnly(a.created_at)}</div>
+      </div>
+      <button class="entry-action-btn" title="دانلود" onclick="downloadAttachment('${a.storage_path}', '${a.file_name.replace(/'/g,"\\'")}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></button>
+      <button class="entry-action-btn danger" title="حذف" onclick="deleteAttachment('${a.id}', '${a.storage_path}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg></button>
+    </div>`;
+  }).join('');
+}
+async function uploadAttachment(){
+  const input = document.getElementById('attachment-file-input');
+  const file = input.files[0];
+  if(!file) return;
+  const statusEl = document.getElementById('attachment-upload-status');
+  statusEl.style.display = 'block';
+  const path = `${activePatientId}/${Date.now()}-${file.name}`;
+  const { error: uploadError } = await sb.storage.from('patient-attachments').upload(path, file);
+  if(uploadError){ statusEl.style.display = 'none'; showToast('خطا در آپلود فایل', true); input.value=''; return; }
+  const { error: dbError } = await sb.from('patient_attachments').insert({
+    patient_id: activePatientId, file_name: file.name, storage_path: path,
+    file_size: file.size, mime_type: file.type, uploaded_by: currentProfile.id,
+  });
+  statusEl.style.display = 'none';
+  input.value = '';
+  if(dbError){ showToast('خطا در ثبت اطلاعات فایل', true); return; }
+  await loadAttachments(activePatientId);
+  showToast('فایل با موفقیت آپلود شد');
+}
+async function downloadAttachment(storagePath, fileName){
+  const { data, error } = await sb.storage.from('patient-attachments').createSignedUrl(storagePath, 60);
+  if(error){ showToast('خطا در دریافت فایل', true); return; }
+  const a = document.createElement('a');
+  a.href = data.signedUrl;
+  a.download = fileName;
+  a.target = '_blank';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+async function deleteAttachment(id, storagePath){
+  const ok = confirm('این فایل برای همیشه حذف شود؟');
+  if(!ok) return;
+  await sb.storage.from('patient-attachments').remove([storagePath]);
+  const { error } = await sb.from('patient_attachments').delete().eq('id', id);
+  if(error){ showToast('خطا در حذف', true); return; }
+  await loadAttachments(activePatientId);
+  showToast('فایل حذف شد');
+}
 
 async function saveRecord(){
   const jd = document.getElementById('edit-birth-day').value;
@@ -1335,12 +1631,17 @@ async function downloadPatientPDF(){
   // مطمئن می‌شویم آخرین دیتای کامنت‌ها و رکوردها لود شده باشد
   await loadPatientRecords(p.id);
   await loadComments(p.id);
+  await loadLabResults(p.id);
 
   const genderLabel = p.gender || '—';
   const ageLabel = p.age != null ? `${toPersianDigits(p.age)} ساله` : '';
   const birthLabel = p.birth_date ? fmtDateOnly(new Date(p.birth_date + 'T00:00:00Z').toISOString()) : '';
 
   const checkboxSections = checkboxGatedTypes.map(t => p['has_' + t] ? pdfLogSection(recordTypeLabels[t], patientRecordsCache[t]) : '').join('');
+
+  const labSection = labResultsCache.length === 0 ? '' : `<div class="pdf-section"><h3>Lab Results</h3><table class="pdf-lab-table"><tr><th>Date</th><th>Test</th><th>Value</th></tr>${
+    labResultsCache.slice().sort((a,b)=>new Date(b.test_date)-new Date(a.test_date)).map(r => `<tr><td>${fmtDateOnly(new Date(r.test_date+'T00:00:00Z').toISOString())}</td><td>${r.test_name}</td><td>${toPersianDigits(r.value)}${r.unit?' '+r.unit:''}</td></tr>`).join('')
+  }</table></div>`;
 
   const container = document.createElement('div');
   container.className = 'pdf-export-root';
@@ -1353,10 +1654,11 @@ async function downloadPatientPDF(){
       ${p.referrer ? `<div class="pdf-header-meta">ارجاع‌دهنده: ${p.referrer}</div>` : ''}
       <div class="pdf-header-meta">تاریخ خروجی: ${fmtTime(new Date().toISOString())}</div>
     </div>
-    ${pdfLogSection('شرح حال', patientRecordsCache.history)}
-    ${pdfLogSection('تشخیص و درمان', patientRecordsCache.diagnosis)}
+    ${pdfLogSection(recordTypeLabels.history, patientRecordsCache.history)}
+    ${pdfLogSection(recordTypeLabels.diagnosis, patientRecordsCache.diagnosis)}
     ${pdfLogSection('یادداشت تغذیه', patientRecordsCache.nutrition)}
     ${checkboxSections}
+    ${labSection}
     ${pdfLogSection('تاریخچه ویزیت‌ها', p.visits)}
     ${pdfLogSection('یادداشت‌های پرونده', allCommentsCache)}
   `;
@@ -1371,6 +1673,9 @@ async function downloadPatientPDF(){
     .pdf-entry{ margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid #EEF4F2; }
     .pdf-entry-head{ display:flex; justify-content:space-between; font-size:11px; color:#93A39C; margin-bottom:3px; }
     .pdf-entry-text{ font-size:13px; line-height:1.7; }
+    .pdf-lab-table{ width:100%; border-collapse:collapse; font-size:12px; direction:ltr; text-align:left; }
+    .pdf-lab-table th{ padding:6px 8px; border-bottom:1px solid #E2EAE7; color:#5C6B65; font-weight:700; }
+    .pdf-lab-table td{ padding:6px 8px; border-bottom:1px solid #EEF4F2; }
   `;
   container.prepend(style);
   document.body.appendChild(container);
@@ -1448,11 +1753,11 @@ async function sendComment(){
 }
 
 /* ---- Patient records log (history / diagnosis / nutrition) ---- */
-const allRecordTypes = ['history','diagnosis','nutrition','past_illness','medications','family_history','allergy','smoking','alcohol'];
-const checkboxGatedTypes = ['past_illness','medications','family_history','allergy','smoking','alcohol'];
-let patientRecordsCache = { history: [], diagnosis: [], nutrition: [], past_illness: [], medications: [], family_history: [], allergy: [], smoking: [], alcohol: [] };
-const recordTypeLabels = { history: 'History', diagnosis: 'Diagnosis & Treatment', nutrition: 'یادداشت تغذیه', past_illness: 'Past Medical History', medications: 'Drug History', family_history: 'Family History', allergy: 'Allergy', smoking: 'Smoking', alcohol: 'Alcohol' };
-let recordShownCounts = { history: 15, diagnosis: 15, nutrition: 15, past_illness: 15, medications: 15, family_history: 15, allergy: 15, smoking: 15, alcohol: 15 };
+const allRecordTypes = ['history','diagnosis','nutrition','past_illness','medications','family_history','allergy','smoking','alcohol','exercise','weight','physical_exam','diet'];
+const checkboxGatedTypes = ['past_illness','medications','family_history','allergy','smoking','alcohol','exercise','weight','physical_exam','diet'];
+let patientRecordsCache = { history: [], diagnosis: [], nutrition: [], past_illness: [], medications: [], family_history: [], allergy: [], smoking: [], alcohol: [], exercise: [], weight: [], physical_exam: [], diet: [] };
+const recordTypeLabels = { history: 'History', diagnosis: 'Diagnosis & Treatment', nutrition: 'یادداشت تغذیه', past_illness: 'Past Medical History', medications: 'Drug History', family_history: 'Family History', allergy: 'Allergy', smoking: 'Smoking', alcohol: 'Alcohol', exercise: 'Exercise', weight: 'Weight', physical_exam: 'Physical Exam & Plan', diet: 'Diet' };
+let recordShownCounts = { history: 15, diagnosis: 15, nutrition: 15, past_illness: 15, medications: 15, family_history: 15, allergy: 15, smoking: 15, alcohol: 15, exercise: 15, weight: 15, physical_exam: 15, diet: 15 };
 
 async function loadPatientRecords(patientId){
   const { data } = await sb.from('patient_records').select('*').eq('patient_id', patientId).order('created_at', {ascending:false});
@@ -1474,9 +1779,11 @@ async function loadPatientRecords(patientId){
 async function toggleCheckboxField(type){
   const checked = document.getElementById('chk-' + type).checked;
   document.getElementById('section-' + type).style.display = checked ? 'block' : 'none';
+  const scrollY = window.scrollY;
   const { error } = await sb.from('patients').update({ ['has_' + type]: checked }).eq('id', activePatientId);
   if(error){ showToast('خطا در ذخیره‌سازی', true); return; }
   await loadPatients();
+  window.scrollTo(0, scrollY);
 }
 
 function renderRecordLog(type){
