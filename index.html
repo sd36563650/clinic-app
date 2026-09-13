@@ -267,6 +267,9 @@
   .lab-form-grid{ direction:ltr; }
   .lab-chart-controls{ display:flex; align-items:center; gap:10px; margin-top:20px; }
   .lab-chart-wrap{ margin-top:12px; background:var(--surface-2); border-radius:var(--radius-sm); padding:12px; }
+  .lab-chart-point{ cursor:pointer; }
+  .lab-chart-tooltip{ position:absolute; pointer-events:none; background:var(--ink); color:#fff; font-size:12px; padding:6px 10px; border-radius:8px; display:none; white-space:nowrap; z-index:10; transform:translate(-50%, -115%); direction:ltr; box-shadow:0 4px 12px rgba(0,0,0,0.2); }
+  .lab-chart-tooltip.show{ display:block; }
   .lab-chart-wrap svg{ width:100%; height:auto; display:block; }
   .lab-table-wrap{ margin-top:16px; overflow-x:auto; }
   .lab-table{ width:100%; border-collapse:collapse; font-size:13px; direction:ltr; text-align:left; }
@@ -495,14 +498,6 @@
               </div>
               <button class="btn btn-primary btn-sm" style="margin-top:14px;" onclick="saveRecord()">ذخیره اطلاعات تماس</button>
             </div>
-            <div class="panel">
-              <div class="panel-title">History</div>
-              <div class="visit-timeline ltr-content" id="log-history"></div>
-              <div class="action-row" style="margin-top:14px;">
-                <input class="field-input ltr-input" id="input-history" placeholder="Add a new entry to history…" onkeydown="if(event.key==='Enter') addRecordEntry('history')">
-                <button class="btn btn-primary" style="white-space:nowrap;" onclick="addRecordEntry('history')">Add</button>
-              </div>
-            </div>
 
             <div class="panel checkbox-gated-panel" data-field="past_illness">
               <div class="panel-title"><label class="checkbox-gate-label"><input type="checkbox" id="chk-past_illness" onchange="toggleCheckboxField('past_illness')"> Past Medical History</label></div>
@@ -603,31 +598,20 @@
               </div>
             </div>
 
-            <div class="panel checkbox-gated-panel" data-field="diet">
-              <div class="panel-title"><label class="checkbox-gate-label"><input type="checkbox" id="chk-diet" onchange="toggleCheckboxField('diet')"> Diet</label></div>
-              <div id="section-diet" style="display:none;">
-                <div class="visit-timeline ltr-content" id="log-diet"></div>
-                <div class="action-row" style="margin-top:14px;">
-                  <input class="field-input ltr-input" id="input-diet" placeholder="Add a new entry…" onkeydown="if(event.key==='Enter') addRecordEntry('diet')">
-                  <button class="btn btn-primary" style="white-space:nowrap;" onclick="addRecordEntry('diet')">Add</button>
-                </div>
-              </div>
-            </div>
-
             <div class="panel">
-              <div class="panel-title"><span>Diagnosis &amp; Treatment</span><span class="lock-badge" id="dx-lock-badge" style="display:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Doctor only</span></div>
+              <div class="panel-title"><span>Physical Exam &amp; Treatment</span><span class="lock-badge" id="dx-lock-badge" style="display:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Doctor only</span></div>
               <div class="visit-timeline ltr-content" id="log-diagnosis"></div>
               <div class="action-row" style="margin-top:14px;" id="diagnosis-input-row">
-                <input class="field-input ltr-input" id="input-diagnosis" placeholder="Add a new entry to diagnosis…" onkeydown="if(event.key==='Enter') addRecordEntry('diagnosis')">
+                <input class="field-input ltr-input" id="input-diagnosis" placeholder="Add a new entry…" onkeydown="if(event.key==='Enter') addRecordEntry('diagnosis')">
                 <button class="btn btn-primary" style="white-space:nowrap;" onclick="addRecordEntry('diagnosis')">Add</button>
               </div>
             </div>
             <div class="panel">
-              <div class="panel-title">یادداشت تغذیه</div>
-              <div class="visit-timeline" id="log-nutrition"></div>
+              <div class="panel-title">Diet</div>
+              <div class="visit-timeline ltr-content" id="log-nutrition"></div>
               <div class="action-row" style="margin-top:14px;">
-                <input class="field-input" id="input-nutrition" placeholder="مورد جدید به یادداشت تغذیه اضافه کن…" onkeydown="if(event.key==='Enter') addRecordEntry('nutrition')">
-                <button class="btn btn-primary" style="white-space:nowrap;" onclick="addRecordEntry('nutrition')">ثبت</button>
+                <input class="field-input ltr-input" id="input-nutrition" placeholder="Add a new entry…" onkeydown="if(event.key==='Enter') addRecordEntry('nutrition')">
+                <button class="btn btn-primary" style="white-space:nowrap;" onclick="addRecordEntry('nutrition')">Add</button>
               </div>
               <div class="sidenote"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>این بخش برای متخصص تغذیه هم قابل مشاهده و ویرایش است.</div>
             </div>
@@ -667,8 +651,9 @@
             <span class="field-label" style="margin-bottom:0;">Show trend for:</span>
             <select class="sort-select" id="lab-chart-select" onchange="renderLabChart()"></select>
           </div>
-          <div class="lab-chart-wrap" id="lab-chart-wrap" style="display:none;">
+          <div class="lab-chart-wrap" id="lab-chart-wrap" style="display:none; position:relative;">
             <svg id="lab-chart-svg" viewBox="0 0 600 220" preserveAspectRatio="xMidYMid meet"></svg>
+            <div class="lab-chart-tooltip" id="lab-chart-tooltip"></div>
           </div>
 
           <div class="lab-table-wrap">
@@ -814,7 +799,6 @@
     <div class="modal-section-label">اطلاعات تکمیلی (اختیاری)</div>
     <div class="form-row"><input class="field-input-modal" id="new-job" placeholder="شغل"><input class="field-input-modal" id="new-referrer" placeholder="ارجاع‌دهنده"></div>
     <input class="field-input-modal" id="new-address" placeholder="آدرس" style="margin-bottom:12px;">
-    <textarea class="field-input" id="new-history" rows="2" placeholder="شرح حال اولیه (اختیاری)"></textarea>
     <div class="modal-actions"><button class="btn btn-primary" id="create-patient-btn" onclick="createPatient()">ثبت پرونده</button><button class="btn btn-ghost" onclick="closeModal('modal-backdrop')">انصراف</button></div>
   </div>
 </div>
@@ -1198,12 +1182,14 @@ function updateReminderBadge(){
 
 /* ================= Navigation ================= */
 function navigate(view){
+  const currentlyVisible = ['list','detail','stats','chat','reminders','invites','notifications','monthly-report-detail'].find(v => document.getElementById('view-'+v).style.display !== 'none');
+  const isActualNavigation = currentlyVisible !== view;
   ['list','detail','stats','chat','reminders','invites','notifications','monthly-report-detail'].forEach(v => document.getElementById('view-'+v).style.display = (v===view?'block':'none'));
   ['nav-list','nav-stats','nav-chat','nav-reminders','nav-invites','nav-notifications'].forEach(id => document.getElementById(id).classList.remove('active'));
   const navId = {list:'nav-list', stats:'nav-stats', chat:'nav-chat', reminders:'nav-reminders', invites:'nav-invites', notifications:'nav-notifications', 'monthly-report-detail':'nav-stats'}[view];
   if(navId) document.getElementById(navId).classList.add('active');
   toggleSidebar(false);
-  window.scrollTo(0,0);
+  if(isActualNavigation) window.scrollTo(0,0);
   if(view==='stats') renderStats();
   if(view==='chat'){ renderGeneralThread(); lastSeenGeneralAt = new Date().toISOString(); localStorage.setItem('lastSeenGeneralAt', lastSeenGeneralAt); updateChatBadge(); }
   if(view==='reminders') renderReminders();
@@ -1400,7 +1386,13 @@ async function deleteVisitEntry(visitId){
   showToast('ویزیت حذف شد');
 }
 
-function refreshDetailIfOpen(){ if(document.getElementById('view-detail').style.display !== 'none') openPatient(activePatientId); }
+function refreshDetailIfOpen(){
+  if(document.getElementById('view-detail').style.display !== 'none'){
+    const scrollY = window.scrollY;
+    openPatient(activePatientId);
+    window.scrollTo(0, scrollY);
+  }
+}
 
 /* ================= Lab Trends ================= */
 let labResultsCache = [];
@@ -1459,6 +1451,28 @@ function renderLabChartSelect(){
   sel.innerHTML = testNames.map(n => `<option value="${n}">${n}</option>`).join('');
   if(testNames.includes(prevValue)) sel.value = prevValue;
 }
+function showLabTooltip(evt, dateLabel, valueLabel){
+  const tooltip = document.getElementById('lab-chart-tooltip');
+  const wrap = document.getElementById('lab-chart-wrap');
+  const wrapRect = wrap.getBoundingClientRect();
+  const svg = document.getElementById('lab-chart-svg');
+  const svgRect = svg.getBoundingClientRect();
+  // موقعیت نقطه‌ی هاورشده را نسبت به کادر lab-chart-wrap محاسبه می‌کنیم
+  const targetCircle = evt.currentTarget.querySelector('circle:last-child');
+  const svgPoint = svg.createSVGPoint();
+  const cx = parseFloat(targetCircle.getAttribute('cx'));
+  const cy = parseFloat(targetCircle.getAttribute('cy'));
+  const ctm = svg.getScreenCTM();
+  const screenX = cx * ctm.a + cy * ctm.c + ctm.e;
+  const screenY = cx * ctm.b + cy * ctm.d + ctm.f;
+  tooltip.style.left = (screenX - wrapRect.left) + 'px';
+  tooltip.style.top = (screenY - wrapRect.top) + 'px';
+  tooltip.innerHTML = `<b>${valueLabel}</b> — ${dateLabel}`;
+  tooltip.classList.add('show');
+}
+function hideLabTooltip(){
+  document.getElementById('lab-chart-tooltip').classList.remove('show');
+}
 function renderLabChart(){
   const wrap = document.getElementById('lab-chart-wrap');
   const svg = document.getElementById('lab-chart-svg');
@@ -1481,7 +1495,16 @@ function renderLabChart(){
     const val = (maxV - t * rangeV).toFixed(1);
     return `<line x1="${padL}" y1="${yy}" x2="${W-padR}" y2="${yy}" stroke="var(--line)" stroke-width="1"/><text x="${padL-8}" y="${yy+3}" font-size="10" fill="var(--ink-faint)" text-anchor="end">${val}</text>`;
   }).join('');
-  const dots = points.map((p,i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(p.value).toFixed(1)}" r="3.5" fill="var(--accent)"/>`).join('');
+  const dots = points.map((p,i) => {
+    const cx = x(i).toFixed(1), cy = y(p.value).toFixed(1);
+    const d = new Date(p.test_date + 'T00:00:00Z');
+    const dateLabel = d.toLocaleDateString('fa-IR', {timeZone:'Asia/Tehran', year:'numeric', month:'long', day:'numeric'});
+    const valueLabel = `${p.value}${p.unit ? ' ' + p.unit : ''}`;
+    return `<g class="lab-chart-point" onmouseenter="showLabTooltip(event, '${dateLabel}', '${valueLabel}')" onmouseleave="hideLabTooltip()">
+      <circle cx="${cx}" cy="${cy}" r="10" fill="transparent"/>
+      <circle cx="${cx}" cy="${cy}" r="3.5" fill="var(--accent)"/>
+    </g>`;
+  }).join('');
   const labels = points.map((p,i) => {
     if(points.length > 8 && i % Math.ceil(points.length/8) !== 0) return '';
     const d = new Date(p.test_date + 'T00:00:00Z');
@@ -1654,9 +1677,8 @@ async function downloadPatientPDF(){
       ${p.referrer ? `<div class="pdf-header-meta">ارجاع‌دهنده: ${p.referrer}</div>` : ''}
       <div class="pdf-header-meta">تاریخ خروجی: ${fmtTime(new Date().toISOString())}</div>
     </div>
-    ${pdfLogSection(recordTypeLabels.history, patientRecordsCache.history)}
     ${pdfLogSection(recordTypeLabels.diagnosis, patientRecordsCache.diagnosis)}
-    ${pdfLogSection('یادداشت تغذیه', patientRecordsCache.nutrition)}
+    ${pdfLogSection(recordTypeLabels.nutrition, patientRecordsCache.nutrition)}
     ${checkboxSections}
     ${labSection}
     ${pdfLogSection('تاریخچه ویزیت‌ها', p.visits)}
@@ -1753,11 +1775,11 @@ async function sendComment(){
 }
 
 /* ---- Patient records log (history / diagnosis / nutrition) ---- */
-const allRecordTypes = ['history','diagnosis','nutrition','past_illness','medications','family_history','allergy','smoking','alcohol','exercise','weight','physical_exam','diet'];
-const checkboxGatedTypes = ['past_illness','medications','family_history','allergy','smoking','alcohol','exercise','weight','physical_exam','diet'];
-let patientRecordsCache = { history: [], diagnosis: [], nutrition: [], past_illness: [], medications: [], family_history: [], allergy: [], smoking: [], alcohol: [], exercise: [], weight: [], physical_exam: [], diet: [] };
-const recordTypeLabels = { history: 'History', diagnosis: 'Diagnosis & Treatment', nutrition: 'یادداشت تغذیه', past_illness: 'Past Medical History', medications: 'Drug History', family_history: 'Family History', allergy: 'Allergy', smoking: 'Smoking', alcohol: 'Alcohol', exercise: 'Exercise', weight: 'Weight', physical_exam: 'Physical Exam & Plan', diet: 'Diet' };
-let recordShownCounts = { history: 15, diagnosis: 15, nutrition: 15, past_illness: 15, medications: 15, family_history: 15, allergy: 15, smoking: 15, alcohol: 15, exercise: 15, weight: 15, physical_exam: 15, diet: 15 };
+const allRecordTypes = ['history','diagnosis','nutrition','past_illness','medications','family_history','allergy','smoking','alcohol','exercise','weight','physical_exam'];
+const checkboxGatedTypes = ['past_illness','medications','family_history','allergy','smoking','alcohol','exercise','weight','physical_exam'];
+let patientRecordsCache = { history: [], diagnosis: [], nutrition: [], past_illness: [], medications: [], family_history: [], allergy: [], smoking: [], alcohol: [], exercise: [], weight: [], physical_exam: [] };
+const recordTypeLabels = { history: 'History', diagnosis: 'Physical Exam & Treatment', nutrition: 'Diet', past_illness: 'Past Medical History', medications: 'Drug History', family_history: 'Family History', allergy: 'Allergy', smoking: 'Smoking', alcohol: 'Alcohol', exercise: 'Exercise', weight: 'Weight', physical_exam: 'Physical Exam & Plan' };
+let recordShownCounts = { history: 15, diagnosis: 15, nutrition: 15, past_illness: 15, medications: 15, family_history: 15, allergy: 15, smoking: 15, alcohol: 15, exercise: 15, weight: 15, physical_exam: 15 };
 
 async function loadPatientRecords(patientId){
   const { data } = await sb.from('patient_records').select('*').eq('patient_id', patientId).order('created_at', {ascending:false});
@@ -1956,7 +1978,7 @@ function toggleAutoFile(){
 }
 function openNewPatientModal(){
   document.getElementById('modal-backdrop').classList.add('show');
-  ['new-name','new-phone','new-nationalid','new-job','new-referrer','new-address','new-history'].forEach(id=>document.getElementById(id).value='');
+  ['new-name','new-phone','new-nationalid','new-job','new-referrer','new-address'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('new-filenum-auto').checked = true;
   document.getElementById('new-filenum').value = nextFileNumber();
   document.getElementById('new-filenum').disabled = true;
@@ -1985,7 +2007,6 @@ async function createPatient(){
   const btn = document.getElementById('create-patient-btn');
   btn.disabled = true; btn.textContent = 'در حال ثبت…';
   const fileNum = document.getElementById('new-filenum').value.trim() || nextFileNumber();
-  const history = document.getElementById('new-history').value.trim();
   const { data, error } = await sb.from('patients').insert({
     file_number: fileNum, name, age, birth_date: birthISO, gender: document.getElementById('new-gender').value,
     national_id: document.getElementById('new-nationalid').value.trim(),
@@ -1997,7 +2018,6 @@ async function createPatient(){
   }).select().single();
   btn.disabled = false; btn.textContent = 'ثبت پرونده';
   if(error){ showToast('خطا در ثبت پرونده — شاید شماره‌ی پرونده تکراری است', true); return; }
-  if(history) await sb.from('patient_records').insert({ patient_id: data.id, record_type: 'history', content: history, author_id: currentProfile.id });
   closeModal('modal-backdrop');
   await loadPatients();
   renderList();
