@@ -634,7 +634,11 @@
         <div class="panel" style="margin-top:16px;">
           <div class="panel-title">Lab Trends</div>
           <div class="field-grid-2 lab-form-grid">
-            <div class="field-group"><div class="field-label">Test name</div><input class="field-input ltr-input" id="lab-test-name" placeholder="e.g. FBS, HbA1c, TSH"></div>
+            <div class="field-group">
+              <div class="field-label">Test name</div>
+              <select class="field-input ltr-input" id="lab-test-select" onchange="handleLabTestSelectChange()"></select>
+              <input class="field-input ltr-input" id="lab-test-name-other" placeholder="Enter test name…" style="display:none; margin-top:8px;">
+            </div>
             <div class="field-group"><div class="field-label">Value</div><input class="field-input ltr-input" id="lab-test-value" placeholder="e.g. 98" inputmode="decimal"></div>
             <div class="field-group"><div class="field-label">Unit (optional)</div><input class="field-input ltr-input" id="lab-test-unit" placeholder="e.g. mg/dL"></div>
             <div class="field-group"><div class="field-label">تاریخ آزمایش (شمسی)</div>
@@ -1345,6 +1349,7 @@ async function openPatient(id){
   document.getElementById('lab-date-day').value = todayJ.jd;
   document.getElementById('lab-date-month').value = todayJ.jm;
   document.getElementById('lab-date-year').value = todayJ.jy;
+  populateLabTestSelect();
   loadLabResults(id);
   loadAttachments(id);
 }
@@ -1395,6 +1400,29 @@ function refreshDetailIfOpen(){
 }
 
 /* ================= Lab Trends ================= */
+const commonLabTests = [
+  'FBS', 'HbA1c', '2hpp', 'TSH', 'T3', 'T4', 'Free T4',
+  'Total Cholesterol', 'Triglyceride', 'HDL', 'LDL',
+  'Creatinine', 'BUN', 'Uric Acid',
+  'AST (SGOT)', 'ALT (SGPT)', 'ALP',
+  'Vitamin D', 'Vitamin B12', 'Ferritin', 'Iron', 'TIBC',
+  'CBC', 'ESR', 'CRP',
+  'Na', 'K', 'Ca', 'Phosphorus', 'Mg',
+  'Urine Analysis', 'Microalbuminuria',
+];
+function populateLabTestSelect(){
+  const sel = document.getElementById('lab-test-select');
+  sel.innerHTML = commonLabTests.map(t => `<option value="${t}">${t}</option>`).join('') + '<option value="__other__">Other…</option>';
+  sel.value = commonLabTests[0];
+  document.getElementById('lab-test-name-other').style.display = 'none';
+}
+function handleLabTestSelectChange(){
+  const sel = document.getElementById('lab-test-select');
+  const otherInput = document.getElementById('lab-test-name-other');
+  otherInput.style.display = sel.value === '__other__' ? 'block' : 'none';
+  if(sel.value === '__other__') otherInput.focus();
+}
+
 let labResultsCache = [];
 async function loadLabResults(patientId){
   const { data } = await sb.from('lab_results').select('*').eq('patient_id', patientId).order('test_date', {ascending:true});
@@ -1404,7 +1432,8 @@ async function loadLabResults(patientId){
   renderLabChart();
 }
 async function addLabResult(){
-  const name = document.getElementById('lab-test-name').value.trim();
+  const sel = document.getElementById('lab-test-select');
+  const name = sel.value === '__other__' ? document.getElementById('lab-test-name-other').value.trim() : sel.value;
   const value = document.getElementById('lab-test-value').value.trim();
   const unit = document.getElementById('lab-test-unit').value.trim();
   const jd = document.getElementById('lab-date-day').value;
@@ -1417,7 +1446,9 @@ async function addLabResult(){
     test_date: testDate, author_id: currentProfile.id,
   });
   if(error){ showToast('خطا در ثبت آزمایش', true); return; }
-  document.getElementById('lab-test-name').value = '';
+  document.getElementById('lab-test-select').value = commonLabTests[0];
+  document.getElementById('lab-test-name-other').value = '';
+  document.getElementById('lab-test-name-other').style.display = 'none';
   document.getElementById('lab-test-value').value = '';
   document.getElementById('lab-test-unit').value = '';
   await loadLabResults(activePatientId);
